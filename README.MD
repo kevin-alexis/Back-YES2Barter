@@ -1,8 +1,8 @@
-# YES2Barter
+# Nombre del Proyecto 
 
-**Your Extra Stuff to Barter - Tus cosas extra para intercambiar**
+**YES2Barter** (Your Extra Stuff to Barter - Tus cosas extra para intercambiar)
 
-## Descripción
+## Problemática
 
 Diariamente, objetos en buen estado, como ropa, muebles, electrodomésticos y dispositivos electrónicos, quedan olvidados en nuestras casas o son desechados prematuramente. De acuerdo con una investigación realizada por GreenPeace:
 
@@ -10,34 +10,14 @@ Diariamente, objetos en buen estado, como ropa, muebles, electrodomésticos y di
 
 En este contexto, el trueque se presenta como una alternativa ideal, ya que permite el intercambio de bienes y servicios sin utilizar dinero, facilitando la reutilización de productos excedentes y ayudando a combatir el consumismo.
 
-## Problemática
-
 A pesar de la existencia de plataformas como Facebook Marketplace o Mercado Libre, que se centran en la compra y venta de productos, no existe un sistema dedicado exclusivamente al trueque. Esto dificulta la reutilización de productos en buen estado que ya no se necesitan, demostrando la necesidad de una solución sencilla y accesible para el intercambio de bienes sobrantes.
 
 ## Integrantes
-
+- **kevin-alexis, Bello Maldonado Kevin Alexis - 22393124, 22393124@utcancun.edu.mx**
 - **mezaaziel06, Hernandez Meza Aziel Michell - 22393132, 22393132@utcancun.edu.mx**
 - **Solrac619, Garcia Padilla Carlos Giovanny - 21393201, 21393201@utcancun.edu.mx**
 
 ## Tecnologías y Librerías Utilizadas
-
-### Front End
-
-- **Vue:** Framework versátil para crear interfaces de usuario.
-- **TypeScript:** Lenguaje fuertemente tipado basado en JavaScript.
-
-#### Librerías para Front End
-
-- **TailwindCSS:** Framework de CSS basado en utilidades.
-- **Vue Router:** Facilitador de la navegación y el enrutamiento.
-- **Axios:** Cliente basado en promesas para peticiones HTTP.
-- **Jwt-decode:** Gestión sencilla de autenticación y extracción de datos de usuario.
-- **Pinia:** Biblioteca para compartir estados entre componentes.
-- **Heroicons:** Íconos SVG de alta calidad.
-- **Sweetalert2:** Alternativa personalizable a los cuadros de alerta por defecto.
-- **Vee-validate:** Validación de formularios en Vue con reglas y mensajes personalizados.
-- **Yup:** Generador de esquemas para validación de datos.
-- **Bcrypt:** Cifrado y verificación de contraseñas mediante hashing.
 
 ### Back End
 
@@ -64,48 +44,33 @@ A pesar de la existencia de plataformas como Facebook Marketplace o Mercado Libr
 ### Base de datos
 
 **SQL Server:** Microsoft SQL Server es un sistema de administración de bases de datos relacionales (RDBMS). Las aplicaciones y las herramientas se conectan a una instancia o base de datos de SQL Server y se comunican mediante Transact-SQL (T-SQL).
----
 
-### Ejecución del Front End
 
-1. **Clonar el Repositorio:**
-    `git clone https://github.com/kevin-alexis/Front-YES2Barter.git`
-    
-2. **Instalar Dependencias:**
-    `cd Front-YES2Barter npm install`
-    
-3. **Configurar Variables de Entorno:**  
-    Asegúrate de establecer las variables necesarias para la conexión a servicios externos o bases de datos (según corresponda).
-    
-4. **Iniciar el Servidor de Desarrollo:**
-    `npm run serve`
-    
-5. **Verificar:**  
-    Abre tu navegador en  el puerto configurado para comprobar que la aplicación funcione correctamente.
-
-#### Pasos para Ejecutar el Back End
+## Ejecución del Back End
 
 1. **Clonar el Repositorio:**
+```bash
+git clone https://github.com/kevin-alexis/Back-YES2Barter.git
+```
     
-    `git clone https://github.com/kevin-alexis/Front-YES2Barter.git`
-    
-2. **Abrir el Proyecto:**  
-    Utiliza Visual Studio o tu editor preferido compatible con .NET.
-3. **Restaurar Dependencias:**
-    
-    `dotnet restore`
-    
-4. **Aplicar Migraciones y Configurar la Base de Datos:**  
-    Si utilizas Entity Framework, ejecuta:
-    
-    `dotnet ef database update`
-    
+2. **Abre el Proyecto:**  
+Utiliza **Visual Studio 2022** para cargar la solución.
+
+3. **Actualiza la cadena de conexión:**
+Edita el archivo `appsettings.Development.json` y actualiza la conexión a la base de datos:
+```json
+"DefaultConnection": "Data Source=CAMBIALO_POR_TU_SERVER_BD;Initial Catalog=yestobarter;Integrated Security=True;Trust Server Certificate=True"
+```
+
+4. **Aplicar las migraciones:**
+Ejecuta el siguiente comando en la **Package Manager Console:**
+```bash
+update-database
+```
+Nota: Asegúrate de seleccionar el proyecto del repositorio como **Default Project.**
+
 5. **Iniciar el Proyecto:**
-    
-    `dotnet run --project WebApi`
-    
-    El servidor se iniciará en en el puerto configurado en `launchSettings.json`.
+Presiona el botón de Ejecutar en Visual Studio y selecciona la opción con HTTPS.
+   
 6. **Verificar:**  
-    Accede a la URL local mediante un navegador o Postman para comprobar el funcionamiento de los endpoints.
-
-Para más detalles sobre cómo configurar y utilizar, consulta la documentación específica en los archivos correspondientes dentro del proyecto.
+Abre tu navegador y accede a la documentación Swagger: https://localhost:7257/swagger/index.html
