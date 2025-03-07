@@ -12,9 +12,4 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Enumerations\" />
-    <Folder Include="ViewModels\" />
-  </ItemGroup>
-
 </Project>

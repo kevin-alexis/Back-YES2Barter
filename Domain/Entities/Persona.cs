@@ -11,7 +11,10 @@ namespace Domain.Entities
     public class Persona : BaseEntity
     {
         public string Nombre { get; set; }
-        public string ApellidoPaterno { get; set; }
-        public string ApellidoMaterno { get; set; }
+
+        // Referencia a AspNetUsers
+        [ForeignKey(nameof(Usuario))]
+        public string IdUsuario { get; set; }
+        public virtual ApplicationUser Usuario { get; set; }
     }
 }
