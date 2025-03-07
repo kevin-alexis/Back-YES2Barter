@@ -17,6 +17,7 @@ A pesar de la existencia de plataformas como Facebook Marketplace o Mercado Libr
 ## Integrantes
 
 - **mezaaziel06, Hernandez Meza Aziel Michell - 22393132, 22393132@utcancun.edu.mx**
+- **Solrac619, Garcia Padilla Carlos Giovanny - 21393201, 21393201@utcancun.edu.mx**
 
 ## Tecnologías y Librerías Utilizadas
 
