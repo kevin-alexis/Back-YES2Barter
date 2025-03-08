@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Mappings;
 using Service.Register;
+using Service.Register;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseRouting();
 
 app.UseHttpsRedirection();
 
