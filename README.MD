@@ -17,6 +17,7 @@ A pesar de la existencia de plataformas como Facebook Marketplace o Mercado Libr
 - **Jacob0418, Coronado Cob Jose Antonio - 22393130, 22393130@utcancun.edu.mx**
 - **mezaaziel06, Hernandez Meza Aziel Michell - 22393132, 22393132@utcancun.edu.mx**
 - **Solrac619, Garcia Padilla Carlos Giovanny - 21393201, 21393201@utcancun.edu.mx**
+- **rafa133169, Canche Monje Jose Rafael - 22394092, 22394092@utcancun.edu.mx**
 
 ## Tecnologías y Librerías Utilizadas
 
