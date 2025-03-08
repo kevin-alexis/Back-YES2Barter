@@ -178,14 +178,6 @@ namespace Service.Services.Implementation
 
                 _dbSet.Update(item);
 
-                //if (item.EstatusContrato == EstatusContrato.ACTIVO)
-                //{
-                //    await _habitacionService.CambiarEstatusHabitacion(item.IdHabitacion, EstatusHabitacion.EN_USO);
-                //} else
-                //{
-                //    await _habitacionService.CambiarEstatusHabitacion(item.IdHabitacion, EstatusHabitacion.DISPONIBLE);
-                //}
-
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -210,11 +202,6 @@ namespace Service.Services.Implementation
                         await _context.SaveChangesAsync();
                     }
 
-
-                    //if (item.EstatusContrato == EstatusContrato.ACTIVO)
-                    //{
-                    //    await _habitacionService.CambiarEstatusHabitacion(item.IdHabitacion, EstatusHabitacion.DISPONIBLE);
-                    //}
                 }
             }
             catch (Exception ex)

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Repository.Migrations
 {
     /// <inheritdoc />
-    public partial class M1_07_03_2025 : Migration
+    public partial class M1_08_03_2025 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -51,22 +51,6 @@ namespace Repository.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Logs",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Fecha = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Nivel = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Mensaje = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Excepcion = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Logs", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Tbl_Categorias",
                 columns: table => new
                 {
@@ -78,6 +62,22 @@ namespace Repository.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tbl_Categorias", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Tbl_Logs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Fecha = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Nivel = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Mensaje = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Excepcion = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tbl_Logs", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -222,6 +222,7 @@ namespace Repository.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Nombre = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Biografia = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IdUsuario = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     EsBorrado = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -247,6 +248,7 @@ namespace Repository.Migrations
                     FechaPublicacion = table.Column<DateOnly>(type: "date", nullable: false),
                     RutaImagen = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IdCategoria = table.Column<int>(type: "int", nullable: false),
+                    Estado = table.Column<int>(type: "int", nullable: false),
                     EsBorrado = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -270,6 +272,7 @@ namespace Repository.Migrations
                     IdUsuarioReceptor = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     IdObjetoOfertado = table.Column<int>(type: "int", nullable: false),
                     IdObjetoSolicitado = table.Column<int>(type: "int", nullable: false),
+                    Estado = table.Column<int>(type: "int", nullable: false),
                     FechaPropuesta = table.Column<DateOnly>(type: "date", nullable: false),
                     EsBorrado = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -401,7 +404,7 @@ namespace Repository.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Logs");
+                name: "Tbl_Logs");
 
             migrationBuilder.DropTable(
                 name: "Tbl_Mensajes");

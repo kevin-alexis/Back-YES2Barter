@@ -16,6 +16,8 @@ namespace Domain.ViewModels.EditObjeto
         public DateOnly FechaPublicacion { get; set; }
         public IFormFile RutaImagen { get; set; }
         public int IdCategoria { get; set; }
+        public EstatusObjeto Estado { get; set; }
+
 
     }
 }

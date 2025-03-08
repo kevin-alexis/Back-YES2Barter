@@ -18,6 +18,7 @@ namespace Domain.ViewModels.GetPropuestasIntercambios
         public int IdObjetoOfertado { get; set; }
         public int IdObjetoSolicitado { get; set; }
         public DateOnly FechaPropuesta { get; set; }
+        public EstatusPropuestaIntercambio Estado { get; set; }
 
     }
 }

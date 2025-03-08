@@ -1,5 +1,4 @@
-﻿using Domain.ViewModels.GetEstadisticas;
-using Domain.ViewModels.Response;
+﻿using Domain.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,10 @@ using System.Threading.Tasks;
 
 namespace Service.Services.Contracts
 {
-    public interface IEstadisticaService
+    public interface ILogService
     {
+        Task Add(LogDTO logDTO);
+        Task<IEnumerable<LogDTO>> GetAll();
+        Task<LogDTO> GetById(int id);
     }
 }

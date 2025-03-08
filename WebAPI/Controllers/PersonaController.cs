@@ -36,11 +36,5 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
-        [HttpPost("GetAllByRol")]
-        public async Task<IActionResult> GetAllByRol([FromBody] string token)
-        {
-            var result = await _service.GetAllByRol(token);
-            return Ok(result);
-        }
     }
 }

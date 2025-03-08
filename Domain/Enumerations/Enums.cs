@@ -12,5 +12,15 @@ namespace Domain.Enumerations
         {
             ADMINISTRADOR, INTERCAMBIADOR
         }
+
+        public enum EstatusObjeto
+        {
+
+        }
+
+        public enum EstatusPropuestaIntercambio
+        {
+
+        }
     }
 }

@@ -25,30 +25,30 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
             {
                 var objetos = new List<Objeto>
                 {
-                    new Objeto
+                   new Objeto
                     {
-                        Nombre = "One Piece.",
-                        Descripcion = "La obra narra las aventuras de Monkey D. Luffy y su tripulación, los Piratas de Sombrero de Paja, recorriendo el mar para encontrar el legendario tesoro One Piece.",
+                        Nombre = "Xbox",
+                        Descripcion = "Consola de videojuegos de última generación.",
                         FechaPublicacion = DateOnly.FromDateTime(DateTime.Now),
                         IdCategoria = 1,
                         RutaImagen = "ruta/imagen1.jpg",
                     },
                     new Objeto
                     {
-                        Nombre = "Lainist: La Pesadilla de la Fabricación.",
-                        Descripcion = "La joven Lain Iwakura inicia un camino que la llevará a adentrarse cada vez más en la red Wired.",
+                        Nombre = "Playera",
+                        Descripcion = "Playera de algodón, cómoda y elegante.",
                         FechaPublicacion = DateOnly.FromDateTime(DateTime.Now),
                         IdCategoria = 2,
                         RutaImagen = "ruta/imagen2.jpg",
                     },
                     new Objeto
                     {
-                        Nombre = "Darling In The Franxx.",
-                        Descripcion = "Los supervivientes de una guerra encarnizada contra unos monstruos se esconden dentro de ciudades fortificadas móviles y entrenan a los jóvenes para pilotar grandes robots de batalla llamados Franxx en defensa de la humanidad.",
+                        Nombre = "Cacerola",
+                        Descripcion = "Cacerola antiadherente ideal para cocina gourmet.",
                         FechaPublicacion = DateOnly.FromDateTime(DateTime.Now),
                         IdCategoria = 3,
                         RutaImagen = "ruta/imagen3.jpg",
-                    },
+                    }
                 };
 
                 _context.Objetos.AddRange(objetos);

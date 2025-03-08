@@ -40,8 +40,8 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                 // Crear usuarios y asignar roles
                 var users = new List<(ApplicationUser user, string role)>
                 {
-                    (new ApplicationUser { UserName = "admin@yestorbarter.com", Email = "admin@yestorbarter.com" }, "Administrador"),
-                    (new ApplicationUser { UserName = "intercambiador@yestorbarter.com", Email = "Intercambiador@yestobarter.com" }, "Intercambiador"),
+                    (new ApplicationUser { UserName = "admin@yestobarter.com", Email = "admin@yestobarter.com" }, "Administrador"),
+                    (new ApplicationUser { UserName = "intercambiador@yestobarter.com", Email = "Intercambiador@yestobarter.com" }, "Intercambiador"),
                 };
 
                 foreach (var (user, role) in users)
@@ -56,8 +56,8 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                 // Crear personas
                 var personas = new List<Persona>
                 {
-                    new Persona { Nombre = "Administrador", IdUsuario = users[0].user.Id }, // Admin
-                    new Persona { Nombre = "Kevin Alexis Bello Maldonado", IdUsuario = users[1].user.Id }, // Intercambiador
+                    new Persona { Nombre = "Administrador", Biografia="Biografía del administrador", IdUsuario = users[0].user.Id }, // Admin
+                    new Persona { Nombre = "Kevin Alexis Bello Maldonado", Biografia="Biografía de Kevin", IdUsuario = users[1].user.Id }, // Intercambiador
                 };
 
                 _context.Personas.AddRange(personas);

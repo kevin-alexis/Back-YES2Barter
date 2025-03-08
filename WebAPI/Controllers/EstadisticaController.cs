@@ -19,20 +19,5 @@ namespace WebAPI.Controllers
             _service = service;
         }
 
-        [HttpPost("GetEstadisticasByUser")]
-        public async Task<IActionResult> GetEstadisticasByUser([FromBody] string token)
-        {
-            try
-            {
-                var result = await _service.GetEstadisticasByUser(token);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
-            }
-        }
-
-
     }
 }

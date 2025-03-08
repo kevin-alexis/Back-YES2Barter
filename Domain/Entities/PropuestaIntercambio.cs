@@ -27,9 +27,7 @@ namespace Domain.Entities
         [ForeignKey(nameof(ObjetoSolicitado))]
         public int IdObjetoSolicitado { get; set; }
         public virtual Objeto ObjetoSolicitado { get; set; }
-
-        //public int estado {  get; set; }
-
+        public EstatusPropuestaIntercambio Estado {  get; set; }
         public DateOnly FechaPropuesta { get; set; }
 
 

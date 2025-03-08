@@ -11,5 +11,7 @@ namespace Domain.Entities
     public class Categoria : BaseEntity
     {
         public string Nombre { get; set; }
+
+        public virtual ICollection<Objeto> Objetos { get; set; } = new List<Objeto>();
     }
 }

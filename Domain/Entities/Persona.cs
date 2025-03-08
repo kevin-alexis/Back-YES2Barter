@@ -11,6 +11,7 @@ namespace Domain.Entities
     public class Persona : BaseEntity
     {
         public string Nombre { get; set; }
+        public string Biografia { get; set; }
 
         // Referencia a AspNetUsers
         [ForeignKey(nameof(Usuario))]

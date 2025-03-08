@@ -17,6 +17,7 @@ namespace Service.Register
             services.AddScoped<IPersonaService, PersonaService>();
             services.AddScoped<IEstadisticaService, EstadisticaService>();
             services.AddScoped<IMensajeService, MensajeService>();
+            services.AddScoped<ILogService, LogService>();
 
             return services;
         }

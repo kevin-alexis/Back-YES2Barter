@@ -71,21 +71,5 @@ namespace Service.Services.Implementation
             };
         }
 
-        virtual public async Task<PropuestaIntercambioDTO> GetById(int id)
-        {
-            try
-            {
-                var item = await _dbSet.Where(e => e.Id == id && !EF.Property<bool>(e, "EsBorrado")).FirstOrDefaultAsync();
-                if (item != null)
-                {
-                    return _mapper.Map<PropuestaIntercambioDTO>(item);
-                }
-                return default(PropuestaIntercambioDTO);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error al obtener el elemento con id {id}", ex);
-            }
-        }
     }
 }

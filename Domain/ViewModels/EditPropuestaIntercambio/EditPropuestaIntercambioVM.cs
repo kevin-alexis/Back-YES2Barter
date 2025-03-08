@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Domain.Enumerations.Enums;
 
 namespace Domain.ViewModels.EditPropuestaIntercambio
 {
@@ -15,6 +16,7 @@ namespace Domain.ViewModels.EditPropuestaIntercambio
         public int IdObjetoOfertado { get; set; }
         public int IdObjetoSolicitado { get; set; }
         public DateOnly FechaPropuesta { get; set; }
+        public EstatusPropuestaIntercambio Estado { get; set; }
 
 
     }

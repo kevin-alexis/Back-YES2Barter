@@ -25,6 +25,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
             {
                 var propuestasIntercambios = new List<PropuestaIntercambio>
                 {
+                    // HAY QUE ARREGLARLOS
                     //new PropuestaIntercambio
                     //{
                     //    IdUsuarioOfertante = "1",

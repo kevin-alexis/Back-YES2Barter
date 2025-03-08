@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace Domain.Entities
 {
-    [Table("Logs")]
-    public class Logs
+    [Table("Tbl_Logs")]
+    public class Log
     {
         [Key]
         public int Id { get; set; }

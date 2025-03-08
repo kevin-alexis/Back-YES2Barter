@@ -60,7 +60,7 @@ namespace Repository.Context
         }
 
 
-        public DbSet<Logs> Logs { get; set; }
+        public DbSet<Log> Logs { get; set; }
 
         // Entidades del Proyecto
         public DbSet<Objeto> Objetos { get; set; }

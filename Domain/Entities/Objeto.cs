@@ -21,7 +21,7 @@ namespace Domain.Entities
         public int IdCategoria { get; set; }
         public virtual Categoria Categoria { get; set; }
 
-        //public int estado {  get; set; }
+        public EstatusObjeto Estado {  get; set; }
 
     }
 }

@@ -16,6 +16,7 @@ namespace Service.Mappings
             CreateMap<PropuestaIntercambio, PropuestaIntercambioDTO>().ReverseMap();
             CreateMap<Persona, PersonaDTO>().ReverseMap();
             CreateMap<Mensaje, MensajeDTO>().ReverseMap();
+            CreateMap<Log, LogDTO>().ReverseMap();
 
             CreateMap<CreateObjetoVM, ObjetoDTO>()
             .ForMember(dest => dest.RutaImagen, opt => opt.Ignore());

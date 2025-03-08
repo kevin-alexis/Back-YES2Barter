@@ -12,8 +12,8 @@ using Repository.Context;
 namespace Repository.Migrations
 {
     [DbContext(typeof(DataBaseContext))]
-    [Migration("20250307175635_M1_07_03_2025")]
-    partial class M1_07_03_2025
+    [Migration("20250308055800_M1_08_03_2025")]
+    partial class M1_08_03_2025
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -110,7 +110,7 @@ namespace Repository.Migrations
                     b.ToTable("Tbl_Categorias");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Logs", b =>
+            modelBuilder.Entity("Domain.Entities.Log", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -135,7 +135,7 @@ namespace Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Logs");
+                    b.ToTable("Tbl_Logs");
                 });
 
             modelBuilder.Entity("Domain.Entities.Mensaje", b =>
@@ -188,6 +188,9 @@ namespace Repository.Migrations
                     b.Property<bool>("EsBorrado")
                         .HasColumnType("bit");
 
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
                     b.Property<DateOnly>("FechaPublicacion")
                         .HasColumnType("date");
 
@@ -217,6 +220,10 @@ namespace Repository.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Biografia")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("EsBorrado")
                         .HasColumnType("bit");
 
@@ -245,6 +252,9 @@ namespace Repository.Migrations
 
                     b.Property<bool>("EsBorrado")
                         .HasColumnType("bit");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
 
                     b.Property<DateOnly>("FechaPropuesta")
                         .HasColumnType("date");
@@ -431,7 +441,7 @@ namespace Repository.Migrations
             modelBuilder.Entity("Domain.Entities.Objeto", b =>
                 {
                     b.HasOne("Domain.Entities.Categoria", "Categoria")
-                        .WithMany()
+                        .WithMany("Objetos")
                         .HasForeignKey("IdCategoria")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -534,6 +544,11 @@ namespace Repository.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Entities.Categoria", b =>
+                {
+                    b.Navigation("Objetos");
                 });
 #pragma warning restore 612, 618
         }

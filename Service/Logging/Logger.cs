@@ -19,7 +19,7 @@ namespace Service.Logging
 
         public async Task LogAsync(string nivel, string mensaje, string excepcion = null)
         {
-            var log = new Logs
+            var log = new Log
             {
                 Fecha = DateTime.Now,
                 Nivel = nivel,

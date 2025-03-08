@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Domain.Enumerations.Enums;
 
 namespace Domain.DTOs
 {
@@ -15,6 +16,8 @@ namespace Domain.DTOs
         public DateOnly FechaPublicacion { get; set; }
         public string RutaImagen { get; set; }
         public int IdCategoria { get; set; }
+        public EstatusObjeto Estado { get; set; }
+
     }
 
 }

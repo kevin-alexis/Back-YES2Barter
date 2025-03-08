@@ -10,8 +10,7 @@ namespace Domain.DTOs
     public class PersonaDTO : BaseDTO
     {
         public string Nombre { get; set; }
-        public string ApellidoPaterno { get; set; }
-        public string ApellidoMaterno { get; set; }
+        public string Biografia { get; set; }
     }
 }
 
