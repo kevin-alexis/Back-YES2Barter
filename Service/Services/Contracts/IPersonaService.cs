@@ -1,5 +1,6 @@
 ﻿using Domain.DTOs;
 using Domain.Entities;
+using Domain.ViewModels.Response;
 
 namespace Service.Services.Contracts
 {

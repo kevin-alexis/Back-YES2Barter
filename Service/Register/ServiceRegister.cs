@@ -1,11 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Service.Services.Contracts;
 using Service.Services.Implementation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace Service.Register
 {
@@ -14,7 +10,14 @@ namespace Service.Register
         public static IServiceCollection AddProjectServices(this IServiceCollection services)
         {
             // Registrar los servicios
+            services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IObjetoService, ObjetoService>();
+            services.AddScoped<ICategoriaService, CategoriaService>();
+            services.AddScoped<IPropuestaIntercambioService, PropuestaIntercambioService>();
             services.AddScoped<IPersonaService, PersonaService>();
+            services.AddScoped<IEstadisticaService, EstadisticaService>();
+            services.AddScoped<IMensajeService, MensajeService>();
+            services.AddScoped<ILogService, LogService>();
 
             return services;
         }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Services.Contracts;
 using System;
@@ -24,7 +25,8 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet]
-        public virtual async Task<ActionResult<IEnumerable<TDto>>> GetAll()
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        virtual public async Task<ActionResult<IEnumerable<TDto>>> GetAll()
         {
             try
             {
@@ -38,7 +40,8 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public virtual async Task<ActionResult<TDto>> GetById(int id)
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        virtual public async Task<ActionResult<TDto>> GetById(int id)
         {
             try
             {
@@ -56,7 +59,8 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost]
-        public virtual async Task<ActionResult> Add([FromBody] TDto itemDto)
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        virtual public async Task<ActionResult> Add([FromBody] TDto itemDto)
         {
             try
             {
@@ -70,7 +74,8 @@ namespace WebAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public virtual async Task<ActionResult> Update(int id, [FromBody] TDto itemDto)
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        virtual public async Task<ActionResult> Update(int id, [FromBody] TDto itemDto)
         {
             try
             {
@@ -83,7 +88,7 @@ namespace WebAPI.Controllers
                 itemIdProperty.SetValue(itemDto, id);
 
                 await _service.Update(itemDto);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {
@@ -92,7 +97,8 @@ namespace WebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public virtual async Task<ActionResult> Delete(int id)
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        virtual public async Task<ActionResult> Delete(int id)
         {
             try
             {
@@ -103,7 +109,7 @@ namespace WebAPI.Controllers
                 }
 
                 await _service.Delete(id);
-                return NoContent();
+                return Ok();
             }
             catch (Exception ex)
             {
