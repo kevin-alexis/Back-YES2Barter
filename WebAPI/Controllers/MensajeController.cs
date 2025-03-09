@@ -2,6 +2,7 @@
 using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.GetMensajes;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -22,6 +23,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("GetAllByIdChat/{idChat}")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult<IEnumerable<GetMensajesVM>>> GetAllByIdChat(int idChat)
         {
             try

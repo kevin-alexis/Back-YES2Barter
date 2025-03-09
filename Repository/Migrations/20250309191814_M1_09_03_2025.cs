@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Repository.Migrations
 {
     /// <inheritdoc />
-    public partial class M1_08_03_2025 : Migration
+    public partial class M1_09_03_2025 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -187,33 +187,6 @@ namespace Repository.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Tbl_Chats",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    IdUsuario1 = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IdUsuario2 = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    EsBorrado = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Tbl_Chats", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Tbl_Chats_AspNetUsers_IdUsuario1",
-                        column: x => x.IdUsuario1,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Tbl_Chats_AspNetUsers_IdUsuario2",
-                        column: x => x.IdUsuario2,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Tbl_Personas",
                 columns: table => new
                 {
@@ -262,42 +235,6 @@ namespace Repository.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Tbl_Mensajes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    IdChat = table.Column<int>(type: "int", nullable: false),
-                    IdUsuarioEmisor = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IdUsuarioReceptor = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Contenido = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FechaEnvio = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EsBorrado = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Tbl_Mensajes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioEmisor",
-                        column: x => x.IdUsuarioEmisor,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioReceptor",
-                        column: x => x.IdUsuarioReceptor,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Tbl_Mensajes_Tbl_Chats_IdChat",
-                        column: x => x.IdChat,
-                        principalTable: "Tbl_Chats",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Tbl_PropuestasIntercambios",
                 columns: table => new
                 {
@@ -319,7 +256,7 @@ namespace Repository.Migrations
                         column: x => x.IdUsuarioOfertante,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Tbl_PropuestasIntercambios_AspNetUsers_IdUsuarioReceptor",
                         column: x => x.IdUsuarioReceptor,
@@ -331,11 +268,81 @@ namespace Repository.Migrations
                         column: x => x.IdObjetoOfertado,
                         principalTable: "Tbl_Objetos",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Tbl_PropuestasIntercambios_Tbl_Objetos_IdObjetoSolicitado",
                         column: x => x.IdObjetoSolicitado,
                         principalTable: "Tbl_Objetos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Tbl_Chats",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IdUsuario1 = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IdUsuario2 = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IdPropuestaIntercambio = table.Column<int>(type: "int", nullable: false),
+                    EsBorrado = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tbl_Chats", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Chats_AspNetUsers_IdUsuario1",
+                        column: x => x.IdUsuario1,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Chats_AspNetUsers_IdUsuario2",
+                        column: x => x.IdUsuario2,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Chats_Tbl_PropuestasIntercambios_IdPropuestaIntercambio",
+                        column: x => x.IdPropuestaIntercambio,
+                        principalTable: "Tbl_PropuestasIntercambios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Tbl_Mensajes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IdChat = table.Column<int>(type: "int", nullable: false),
+                    IdUsuarioEmisor = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IdUsuarioReceptor = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Contenido = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FechaEnvio = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EsBorrado = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tbl_Mensajes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioEmisor",
+                        column: x => x.IdUsuarioEmisor,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioReceptor",
+                        column: x => x.IdUsuarioReceptor,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Mensajes_Tbl_Chats_IdChat",
+                        column: x => x.IdChat,
+                        principalTable: "Tbl_Chats",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -378,6 +385,11 @@ namespace Repository.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tbl_Chats_IdPropuestaIntercambio",
+                table: "Tbl_Chats",
+                column: "IdPropuestaIntercambio");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tbl_Chats_IdUsuario1",
@@ -463,19 +475,19 @@ namespace Repository.Migrations
                 name: "Tbl_Personas");
 
             migrationBuilder.DropTable(
-                name: "Tbl_PropuestasIntercambios");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Tbl_Chats");
 
             migrationBuilder.DropTable(
-                name: "Tbl_Objetos");
+                name: "Tbl_PropuestasIntercambios");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Tbl_Objetos");
 
             migrationBuilder.DropTable(
                 name: "Tbl_Categorias");

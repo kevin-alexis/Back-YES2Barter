@@ -9,5 +9,8 @@ namespace Domain.ViewModels.GetChats
         public Persona PersonaEmisor { get; set; }
         public string IdUsuario2 { get; set; }
         public Persona PersonaReceptor { get; set; }
+        public int IdPropuestaIntercambio { get; set; }
+        public PropuestaIntercambio PropuestaIntercambio { get; set; }
+
     }
 }

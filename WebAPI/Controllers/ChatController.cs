@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Domain.DTOs;
 using Domain.Entities;
+using Domain.ViewModels.CloseChat;
 using Domain.ViewModels.GetChats;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -24,6 +26,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("GetAllByIdUsuario/{idUsuario}")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult<IEnumerable<GetChatsVM>>> GetAllByIdUsuario(string idUsuario)
         {
             try
@@ -37,5 +40,19 @@ namespace WebAPI.Controllers
             }
         }
 
+        [HttpPost("CloseChat")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        public async Task<ActionResult> CloseChat([FromBody] CloseChatVM closeChatVM)
+        {
+            try
+            {
+                await _service.CloseChat(closeChatVM.IdChat, closeChatVM.IsSuccess);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
     }
 }

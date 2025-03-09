@@ -137,6 +137,9 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
+// Acceso a user desde la clase de servicio
+builder.Services.AddHttpContextAccessor();
+
 
 var app = builder.Build();
 

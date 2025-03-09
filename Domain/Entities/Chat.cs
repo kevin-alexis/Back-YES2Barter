@@ -18,5 +18,9 @@ namespace Domain.Entities
         public string IdUsuario2 { get; set; }
         public virtual ApplicationUser Usuario2 { get; set; }
 
+        [ForeignKey(nameof(PropuestaIntercambio))]
+        public int IdPropuestaIntercambio { get; set; }
+        public virtual PropuestaIntercambio PropuestaIntercambio { get; set; }
+
     }
 }

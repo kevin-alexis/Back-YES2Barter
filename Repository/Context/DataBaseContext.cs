@@ -24,7 +24,7 @@ namespace Repository.Context
                 .HasOne(p => p.UsuarioOfertante)
                 .WithMany()
                 .HasForeignKey(p => p.IdUsuarioOfertante)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PropuestaIntercambio>()
                 .HasOne(p => p.UsuarioReceptor)
@@ -36,7 +36,7 @@ namespace Repository.Context
                 .HasOne(p => p.ObjetoOfertado)
                 .WithMany()
                 .HasForeignKey(p => p.IdObjetoOfertado)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PropuestaIntercambio>()
                 .HasOne(p => p.ObjetoSolicitado)
@@ -48,7 +48,7 @@ namespace Repository.Context
                .HasOne(p => p.UsuarioEmisor)
                .WithMany()
                .HasForeignKey(p => p.IdUsuarioEmisor)
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Mensaje>()
                 .HasOne(p => p.UsuarioReceptor)
@@ -66,7 +66,7 @@ namespace Repository.Context
                .HasOne(p => p.Usuario1)
                .WithMany()
                .HasForeignKey(p => p.IdUsuario1)
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Chat>()
                 .HasOne(p => p.Usuario2)

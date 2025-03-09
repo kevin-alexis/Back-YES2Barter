@@ -75,7 +75,8 @@ namespace Service.Services.Implementation
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim("RememberMe", rememberMe.ToString())
+                new Claim("RememberMe", rememberMe.ToString()),
+                new Claim("uid", user.Id.ToString())
             };
 
                 // Agregar el rol a los claims

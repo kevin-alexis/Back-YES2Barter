@@ -31,6 +31,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                         Descripcion = "Consola de videojuegos de última generación.",
                         FechaPublicacion = DateTime.Now,
                         IdCategoria = 1,
+                        Estado = EstatusObjeto.DISPONIBLE,
                         RutaImagen = "ruta/imagen1.jpg",
                     },
                     new Objeto
@@ -39,6 +40,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                         Descripcion = "Playera de algodón, cómoda y elegante.",
                         FechaPublicacion = DateTime.Now,
                         IdCategoria = 2,
+                        Estado = EstatusObjeto.DISPONIBLE,
                         RutaImagen = "ruta/imagen2.jpg",
                     },
                     new Objeto
@@ -47,6 +49,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                         Descripcion = "Cacerola antiadherente ideal para cocina gourmet.",
                         FechaPublicacion = DateTime.Now,
                         IdCategoria = 3,
+                        Estado = EstatusObjeto.DISPONIBLE,
                         RutaImagen = "ruta/imagen3.jpg",
                     }
                 };
