@@ -13,6 +13,7 @@ namespace Service.Services.Contracts
 {
     public interface IPropuestaIntercambioService : IBaseService<PropuestaIntercambio, PropuestaIntercambioDTO>
     {
+        Task ChangeStatus(int IdPropuestaIntercambio, Enums.EstatusPropuestaIntercambio estatus);
         Task<EndpointResponse<List<PropuestaIntercambioDTO>>> GetAllByIdObjeto(int idObjeto);
     }
 }

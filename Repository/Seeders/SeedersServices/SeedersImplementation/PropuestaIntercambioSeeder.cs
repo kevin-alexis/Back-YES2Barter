@@ -32,7 +32,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                     //    IdUsuarioReceptor = "user2",
                     //    IdObjetoOfertado = 1,
                     //    IdObjetoSolicitado = 2,
-                    //    FechaPropuesta = DateOnly.FromDateTime(DateTime.UtcNow)
+                    //    FechaPropuesta = DateOnly.FromDateTime(DateTime.Now)
                     //},
                     //new PropuestaIntercambio
                     //{
@@ -40,7 +40,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                     //    IdUsuarioReceptor = "user4",
                     //    IdObjetoOfertado = 2,
                     //    IdObjetoSolicitado = 3,
-                    //    FechaPropuesta = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1))
+                    //    FechaPropuesta = DateOnly.FromDateTime(DateTime.Now.AddDays(-1))
                     //},
                     //new PropuestaIntercambio
                     //{
@@ -48,7 +48,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                     //    IdUsuarioReceptor = "user6",
                     //    IdObjetoOfertado = 3,
                     //    IdObjetoSolicitado = 1,
-                    //    FechaPropuesta = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2))
+                    //    FechaPropuesta = DateOnly.FromDateTime(DateTime.Now.AddDays(-2))
                     //}
                 };
 

@@ -12,8 +12,8 @@ using Repository.Context;
 namespace Repository.Migrations
 {
     [DbContext(typeof(DataBaseContext))]
-    [Migration("20250309022714_M1_08_03_2025")]
-    partial class M1_08_03_2025
+    [Migration("20250309191814_M1_09_03_2025")]
+    partial class M1_09_03_2025
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -121,6 +121,9 @@ namespace Repository.Migrations
                     b.Property<bool>("EsBorrado")
                         .HasColumnType("bit");
 
+                    b.Property<int>("IdPropuestaIntercambio")
+                        .HasColumnType("int");
+
                     b.Property<string>("IdUsuario1")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -130,6 +133,8 @@ namespace Repository.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IdPropuestaIntercambio");
 
                     b.HasIndex("IdUsuario1");
 
@@ -458,10 +463,16 @@ namespace Repository.Migrations
 
             modelBuilder.Entity("Domain.Entities.Chat", b =>
                 {
+                    b.HasOne("Domain.Entities.PropuestaIntercambio", "PropuestaIntercambio")
+                        .WithMany()
+                        .HasForeignKey("IdPropuestaIntercambio")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.ApplicationUser", "Usuario1")
                         .WithMany()
                         .HasForeignKey("IdUsuario1")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.ApplicationUser", "Usuario2")
@@ -469,6 +480,8 @@ namespace Repository.Migrations
                         .HasForeignKey("IdUsuario2")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("PropuestaIntercambio");
 
                     b.Navigation("Usuario1");
 
@@ -486,7 +499,7 @@ namespace Repository.Migrations
                     b.HasOne("Domain.Entities.ApplicationUser", "UsuarioEmisor")
                         .WithMany()
                         .HasForeignKey("IdUsuarioEmisor")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.ApplicationUser", "UsuarioReceptor")
@@ -529,7 +542,7 @@ namespace Repository.Migrations
                     b.HasOne("Domain.Entities.Objeto", "ObjetoOfertado")
                         .WithMany()
                         .HasForeignKey("IdObjetoOfertado")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.Objeto", "ObjetoSolicitado")
@@ -541,7 +554,7 @@ namespace Repository.Migrations
                     b.HasOne("Domain.Entities.ApplicationUser", "UsuarioOfertante")
                         .WithMany()
                         .HasForeignKey("IdUsuarioOfertante")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Domain.Entities.ApplicationUser", "UsuarioReceptor")

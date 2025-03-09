@@ -4,6 +4,8 @@ using Domain.Entities;
 using Domain.ViewModels.GetChats;
 using Domain.ViewModels.GetMensajes;
 using Domain.ViewModels.Response;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Logging;
@@ -12,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.WebSockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,20 +24,26 @@ namespace Service.Services.Implementation
     {
         private new readonly DataBaseContext _context;
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
-        private readonly IPropuestaIntercambioService _habitacionService;
         private readonly Logger _logger;
         private readonly IChatService _chatService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public MensajeService(DataBaseContext context, IMapper mapper, Logger logger, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, IChatService chatService) : base(context, mapper, logger)
+        public MensajeService(
+            DataBaseContext context, 
+            IMapper mapper, Logger logger, 
+            Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
+            IChatService chatService,
+            IHttpContextAccessor httpContextAccessor
+            ) : base(context, mapper, logger)
         {
             _context = context;
             _userManager = userManager;
             _logger = logger;
             _chatService = chatService;
+            _httpContextAccessor = httpContextAccessor;
 
         }
 
-        // Guardar mensaje en la base de datos
         public async Task GuardarMensaje(int idChat, string idEmisor, string idReceptor, string contenido)
         {
             var mensaje = new Mensaje
@@ -43,7 +52,7 @@ namespace Service.Services.Implementation
                 IdUsuarioEmisor = idEmisor,
                 IdUsuarioReceptor = idReceptor,
                 Contenido = contenido,
-                FechaEnvio = DateTime.UtcNow
+                FechaEnvio = DateTime.Now
             };
 
             _context.Mensajes.Add(mensaje);
@@ -57,6 +66,40 @@ namespace Service.Services.Implementation
                 return new EndpointResponse<List<GetMensajesVM>>
                 {
                     Message = "El id es requerido",
+                    Success = false,
+                    Data = new List<GetMensajesVM>()
+                };
+            }
+
+            var chat = await _context.Chats.FirstOrDefaultAsync(x => x.Id == idChat && x.EsBorrado == false);
+            if (chat == null)
+            {
+                return new EndpointResponse<List<GetMensajesVM>>
+                {
+                    Message = "Chat no encontrado",
+                    Success = false,
+                    Data = new List<GetMensajesVM>()
+                };
+            }
+
+            var claims = _httpContextAccessor.HttpContext?.User.Claims.ToList();
+            var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return new EndpointResponse<List<GetMensajesVM>>
+                {
+                    Message = "Usuario no autenticado",
+                    Success = false,
+                    Data = new List<GetMensajesVM>()
+                };
+            }
+
+            if (chat.IdUsuario1 != userId && chat.IdUsuario2 != userId)
+            {
+                return new EndpointResponse<List<GetMensajesVM>>
+                {
+                    Message = "El usuario no tiene permisos para acceder a este chat.",
                     Success = false,
                     Data = new List<GetMensajesVM>()
                 };

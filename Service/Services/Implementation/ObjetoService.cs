@@ -4,6 +4,7 @@ using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.Response;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Logging;
@@ -20,16 +21,12 @@ namespace Service.Services.Implementation
 {
     public class ObjetoService : BaseService<Objeto, ObjetoDTO>, IObjetoService
     {
-        private new readonly DataBaseContext _context;
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
-        private readonly IPropuestaIntercambioService _habitacionService;
         private readonly Logger _logger;
 
-        public ObjetoService(DataBaseContext context, IPropuestaIntercambioService habitacionService, IMapper mapper, Logger logger, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager) : base(context, mapper, logger)
+        public ObjetoService(DataBaseContext context, IMapper mapper, Logger logger, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager) : base(context, mapper, logger)
         {
-            _context = context;
             _userManager = userManager;
-            _habitacionService = habitacionService;
             _logger = logger;
 
         }
@@ -67,6 +64,7 @@ namespace Service.Services.Implementation
                 Descripcion = objeto.Descripcion,
                 EsBorrado = objeto.EsBorrado,
                 FechaPublicacion = objeto.FechaPublicacion,
+                Estado = objeto.Estado,
                 RutaImagen = objeto.RutaImagen
             }).ToList();
 
@@ -111,6 +109,7 @@ namespace Service.Services.Implementation
                 Descripcion = objeto.Descripcion,
                 FechaPublicacion = objeto.FechaPublicacion,
                 RutaImagen = objeto.RutaImagen,
+                Estado = objeto.Estado,
                 EsBorrado = objeto.EsBorrado
             }).ToList();
 
@@ -211,5 +210,27 @@ namespace Service.Services.Implementation
             }
         }
 
+        public async Task ChangeStatus(int IdObjeto, EstatusObjeto estatus)
+        {
+            try
+            {
+                Objeto objeto = await _context.Objetos.FirstOrDefaultAsync(x => x.Id == IdObjeto);
+
+                if (objeto == null)
+                {
+                    throw new HubException("No se pudo obtener el objeto.");
+                }
+
+                objeto.Estado = estatus;
+
+                _dbSet.Update(objeto);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                //await _logger.LogAsync("Error", "Error al actualizar el elemento", ex.ToString());
+                throw new Exception("Error al actualizar el elemento", ex);
+            }
+        }
     }
 }

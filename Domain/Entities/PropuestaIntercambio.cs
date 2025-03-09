@@ -30,6 +30,5 @@ namespace Domain.Entities
         public EstatusPropuestaIntercambio Estado {  get; set; }
         public DateTime FechaPropuesta { get; set; }
 
-
     }
 }

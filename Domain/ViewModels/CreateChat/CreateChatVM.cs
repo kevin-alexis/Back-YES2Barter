@@ -10,5 +10,7 @@ namespace Domain.ViewModels.CreateChat
     {
         public string IdUsuario1 { get; set; }
         public string IdUsuario2 { get; set; }
+        public int IdPropuestaIntercambio { get; set; }
+
     }
 }
