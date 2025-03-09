@@ -233,9 +233,8 @@ namespace Service.Services.Implementation
                 }
 
                 user.UserName = updateAccountVM.Email;
-                user.PhoneNumber = updateAccountVM.NumeroDeTelefono;
 
-                if(user.Email != updateAccountVM.Email)
+                if (user.Email != updateAccountVM.Email)
                 {
                     var emailChangeToken = await _userManager.GenerateChangeEmailTokenAsync(user, updateAccountVM.Email);
                     var emailChangeResult = await _userManager.ChangeEmailAsync(user, updateAccountVM.Email, emailChangeToken);
@@ -295,7 +294,6 @@ namespace Service.Services.Implementation
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
-
         public async Task<EndpointResponse<List<AccountVM>>> GetAllAccounts()
         {
             try

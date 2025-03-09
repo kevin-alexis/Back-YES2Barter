@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Domain.DTOs;
 using Domain.Entities;
-using Domain.ViewModels.GetMensajes;
+using Domain.ViewModels.GetChats;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -13,20 +13,22 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class MensajeController : BaseController<Mensaje, MensajeDTO, IMensajeService>
+    public class ChatController : BaseController<Chat, ChatDTO, IChatService>
     {
-        private readonly IMensajeService _service;
-        public MensajeController(IMensajeService service, IMapper mapper) : base(service, mapper)
+        private readonly IChatService _service;
+        private readonly IMensajeService _mensajeService;
+        public ChatController(IChatService service, IMensajeService mensajeService, IMapper mapper) : base(service, mapper)
         {
             _service = service;
+            _mensajeService = mensajeService;
         }
 
-        [HttpGet("GetAllByIdChat/{idChat}")]
-        public async Task<ActionResult<IEnumerable<GetMensajesVM>>> GetAllByIdChat(int idChat)
+        [HttpGet("GetAllByIdUsuario/{idUsuario}")]
+        public async Task<ActionResult<IEnumerable<GetChatsVM>>> GetAllByIdUsuario(string idUsuario)
         {
             try
             {
-                var itemsDto = await _service.GetAllByIdChat(idChat);
+                var itemsDto = await _service.GetAllByIdUsuario(idUsuario);
                 return Ok(itemsDto);
             }
             catch (Exception ex)
@@ -34,6 +36,6 @@ namespace WebAPI.Controllers
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
-    }
 
+    }
 }

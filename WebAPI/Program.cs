@@ -2,6 +2,7 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.FileProviders;
@@ -13,6 +14,9 @@ using Repository.Seeders.SeedersRegister;
 using Service.Logging;
 using Service.Mappings;
 using Service.Register;
+using Service.Services.Contracts;
+using Service.Services.Implementation;
+using Service.SignalR;
 using System.Text;
 
 
@@ -51,6 +55,9 @@ builder.Services.AddCors(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// websocket para el chat
+builder.Services.AddSignalR();
 
 // Registrar los servicios
 builder.Services.AddProjectServices();
@@ -170,5 +177,5 @@ app.UseAuthentication(); // Agregar autenticación
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapHub<ChatHub>("Chathub");
 app.Run();

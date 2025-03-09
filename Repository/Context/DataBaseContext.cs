@@ -56,6 +56,24 @@ namespace Repository.Context
                 .HasForeignKey(p => p.IdUsuarioReceptor)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Mensaje>()
+                .HasOne(p => p.Chat)
+                .WithMany()
+                .HasForeignKey(p => p.IdChat)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Chat>()
+               .HasOne(p => p.Usuario1)
+               .WithMany()
+               .HasForeignKey(p => p.IdUsuario1)
+               .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Chat>()
+                .HasOne(p => p.Usuario2)
+                .WithMany()
+                .HasForeignKey(p => p.IdUsuario2)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<ApplicationUser>();
         }
 
@@ -67,6 +85,7 @@ namespace Repository.Context
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<PropuestaIntercambio> PropuestasIntercambios { get; set; }
         public DbSet<Persona> Personas { get; set; }
+        public DbSet<Chat> Chats { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
     }
 }

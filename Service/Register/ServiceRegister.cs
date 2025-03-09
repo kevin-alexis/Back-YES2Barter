@@ -16,6 +16,7 @@ namespace Service.Register
             services.AddScoped<IPropuestaIntercambioService, PropuestaIntercambioService>();
             services.AddScoped<IPersonaService, PersonaService>();
             services.AddScoped<IEstadisticaService, EstadisticaService>();
+            services.AddScoped<IChatService, ChatService>();
             services.AddScoped<IMensajeService, MensajeService>();
             services.AddScoped<ILogService, LogService>();
 

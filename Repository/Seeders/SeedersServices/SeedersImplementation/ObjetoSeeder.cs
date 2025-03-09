@@ -29,7 +29,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                     {
                         Nombre = "Xbox",
                         Descripcion = "Consola de videojuegos de última generación.",
-                        FechaPublicacion = DateOnly.FromDateTime(DateTime.Now),
+                        FechaPublicacion = DateTime.Now,
                         IdCategoria = 1,
                         RutaImagen = "ruta/imagen1.jpg",
                     },
@@ -37,7 +37,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                     {
                         Nombre = "Playera",
                         Descripcion = "Playera de algodón, cómoda y elegante.",
-                        FechaPublicacion = DateOnly.FromDateTime(DateTime.Now),
+                        FechaPublicacion = DateTime.Now,
                         IdCategoria = 2,
                         RutaImagen = "ruta/imagen2.jpg",
                     },
@@ -45,7 +45,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                     {
                         Nombre = "Cacerola",
                         Descripcion = "Cacerola antiadherente ideal para cocina gourmet.",
-                        FechaPublicacion = DateOnly.FromDateTime(DateTime.Now),
+                        FechaPublicacion = DateTime.Now,
                         IdCategoria = 3,
                         RutaImagen = "ruta/imagen3.jpg",
                     }
