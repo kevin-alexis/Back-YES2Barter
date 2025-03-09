@@ -187,29 +187,27 @@ namespace Repository.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Tbl_Mensajes",
+                name: "Tbl_Chats",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    IdUsuarioEmisor = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    IdUsuarioReceptor = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Contenido = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FechaEnvio = table.Column<DateOnly>(type: "date", nullable: false),
+                    IdUsuario1 = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IdUsuario2 = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     EsBorrado = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Tbl_Mensajes", x => x.Id);
+                    table.PrimaryKey("PK_Tbl_Chats", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioEmisor",
-                        column: x => x.IdUsuarioEmisor,
+                        name: "FK_Tbl_Chats_AspNetUsers_IdUsuario1",
+                        column: x => x.IdUsuario1,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioReceptor",
-                        column: x => x.IdUsuarioReceptor,
+                        name: "FK_Tbl_Chats_AspNetUsers_IdUsuario2",
+                        column: x => x.IdUsuario2,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -223,6 +221,7 @@ namespace Repository.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Nombre = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Biografia = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RutaFotoPerfil = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IdUsuario = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     EsBorrado = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -245,7 +244,7 @@ namespace Repository.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Nombre = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FechaPublicacion = table.Column<DateOnly>(type: "date", nullable: false),
+                    FechaPublicacion = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RutaImagen = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IdCategoria = table.Column<int>(type: "int", nullable: false),
                     Estado = table.Column<int>(type: "int", nullable: false),
@@ -263,6 +262,42 @@ namespace Repository.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Tbl_Mensajes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IdChat = table.Column<int>(type: "int", nullable: false),
+                    IdUsuarioEmisor = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IdUsuarioReceptor = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Contenido = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FechaEnvio = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EsBorrado = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tbl_Mensajes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioEmisor",
+                        column: x => x.IdUsuarioEmisor,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Mensajes_AspNetUsers_IdUsuarioReceptor",
+                        column: x => x.IdUsuarioReceptor,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Mensajes_Tbl_Chats_IdChat",
+                        column: x => x.IdChat,
+                        principalTable: "Tbl_Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Tbl_PropuestasIntercambios",
                 columns: table => new
                 {
@@ -273,7 +308,7 @@ namespace Repository.Migrations
                     IdObjetoOfertado = table.Column<int>(type: "int", nullable: false),
                     IdObjetoSolicitado = table.Column<int>(type: "int", nullable: false),
                     Estado = table.Column<int>(type: "int", nullable: false),
-                    FechaPropuesta = table.Column<DateOnly>(type: "date", nullable: false),
+                    FechaPropuesta = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EsBorrado = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -343,6 +378,21 @@ namespace Repository.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tbl_Chats_IdUsuario1",
+                table: "Tbl_Chats",
+                column: "IdUsuario1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tbl_Chats_IdUsuario2",
+                table: "Tbl_Chats",
+                column: "IdUsuario2");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Tbl_Mensajes_IdChat",
+                table: "Tbl_Mensajes",
+                column: "IdChat");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tbl_Mensajes_IdUsuarioEmisor",
@@ -419,10 +469,13 @@ namespace Repository.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Tbl_Chats");
 
             migrationBuilder.DropTable(
                 name: "Tbl_Objetos");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Tbl_Categorias");

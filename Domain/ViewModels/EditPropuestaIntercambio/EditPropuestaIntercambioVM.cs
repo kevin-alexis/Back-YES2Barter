@@ -15,7 +15,7 @@ namespace Domain.ViewModels.EditPropuestaIntercambio
         public string IdUsuarioReceptor { get; set; }
         public int IdObjetoOfertado { get; set; }
         public int IdObjetoSolicitado { get; set; }
-        public DateOnly FechaPropuesta { get; set; }
+        public DateTime FechaPropuesta { get; set; }
         public EstatusPropuestaIntercambio Estado { get; set; }
 
 

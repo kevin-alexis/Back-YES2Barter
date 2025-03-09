@@ -107,6 +107,34 @@ namespace Repository.Migrations
                     b.ToTable("Tbl_Categorias");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Chat", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("EsBorrado")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("IdUsuario1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("IdUsuario2")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdUsuario1");
+
+                    b.HasIndex("IdUsuario2");
+
+                    b.ToTable("Tbl_Chats");
+                });
+
             modelBuilder.Entity("Domain.Entities.Log", b =>
                 {
                     b.Property<int>("Id")
@@ -150,8 +178,11 @@ namespace Repository.Migrations
                     b.Property<bool>("EsBorrado")
                         .HasColumnType("bit");
 
-                    b.Property<DateOnly>("FechaEnvio")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("FechaEnvio")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IdChat")
+                        .HasColumnType("int");
 
                     b.Property<string>("IdUsuarioEmisor")
                         .IsRequired()
@@ -162,6 +193,8 @@ namespace Repository.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IdChat");
 
                     b.HasIndex("IdUsuarioEmisor");
 
@@ -188,8 +221,8 @@ namespace Repository.Migrations
                     b.Property<int>("Estado")
                         .HasColumnType("int");
 
-                    b.Property<DateOnly>("FechaPublicacion")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("FechaPublicacion")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("IdCategoria")
                         .HasColumnType("int");
@@ -232,6 +265,10 @@ namespace Repository.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RutaFotoPerfil")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IdUsuario");
@@ -253,8 +290,8 @@ namespace Repository.Migrations
                     b.Property<int>("Estado")
                         .HasColumnType("int");
 
-                    b.Property<DateOnly>("FechaPropuesta")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("FechaPropuesta")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("IdObjetoOfertado")
                         .HasColumnType("int");
@@ -416,8 +453,33 @@ namespace Repository.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Chat", b =>
+                {
+                    b.HasOne("Domain.Entities.ApplicationUser", "Usuario1")
+                        .WithMany()
+                        .HasForeignKey("IdUsuario1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ApplicationUser", "Usuario2")
+                        .WithMany()
+                        .HasForeignKey("IdUsuario2")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Usuario1");
+
+                    b.Navigation("Usuario2");
+                });
+
             modelBuilder.Entity("Domain.Entities.Mensaje", b =>
                 {
+                    b.HasOne("Domain.Entities.Chat", "Chat")
+                        .WithMany()
+                        .HasForeignKey("IdChat")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.ApplicationUser", "UsuarioEmisor")
                         .WithMany()
                         .HasForeignKey("IdUsuarioEmisor")
@@ -429,6 +491,8 @@ namespace Repository.Migrations
                         .HasForeignKey("IdUsuarioReceptor")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Chat");
 
                     b.Navigation("UsuarioEmisor");
 

@@ -42,6 +42,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                 {
                     (new ApplicationUser { UserName = "admin@yestobarter.com", Email = "admin@yestobarter.com" }, "Administrador"),
                     (new ApplicationUser { UserName = "intercambiador@yestobarter.com", Email = "Intercambiador@yestobarter.com" }, "Intercambiador"),
+                    (new ApplicationUser { UserName = "intercambiador2@yestobarter.com", Email = "Intercambiador2@yestobarter.com" }, "Intercambiador"),
                 };
 
                 foreach (var (user, role) in users)
@@ -56,8 +57,9 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                 // Crear personas
                 var personas = new List<Persona>
                 {
-                    new Persona { Nombre = "Administrador", Biografia="Biografía del administrador", IdUsuario = users[0].user.Id }, // Admin
-                    new Persona { Nombre = "Kevin Alexis Bello Maldonado", Biografia="Biografía de Kevin", IdUsuario = users[1].user.Id }, // Intercambiador
+                    new Persona { Nombre = "Administrador", Biografia="Biografía del administrador", IdUsuario = users[0].user.Id, RutaFotoPerfil = "Uploads\\FotoPerfil\\FotoPerfilDefecto.png" }, // Admin
+                    new Persona { Nombre = "Intercambiador 1", Biografia="Biografía de Intercambiador 1", IdUsuario = users[1].user.Id, RutaFotoPerfil = "Uploads\\FotoPerfil\\FotoPerfilDefecto.png" }, // Intercambiador
+                    new Persona { Nombre = "Intercambiador 2", Biografia="Biografía de Intercambiador 2", IdUsuario = users[2].user.Id, RutaFotoPerfil = "Uploads\\FotoPerfil\\FotoPerfilDefecto.png" }, // Intercambiador
                 };
 
                 _context.Personas.AddRange(personas);

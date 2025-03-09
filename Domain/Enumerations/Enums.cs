@@ -22,5 +22,12 @@ namespace Domain.Enumerations
         {
 
         }
+
+        //public enum EstadoMensaje
+        //{
+        //    Enviado,
+        //    Recibido,
+        //    Leído
+        //}
     }
 }

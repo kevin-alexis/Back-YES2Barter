@@ -14,7 +14,7 @@ namespace Domain.Entities
     {
         public string Nombre { get; set; }
         public string Descripcion { get; set; }
-        public DateOnly FechaPublicacion { get; set; }
+        public DateTime FechaPublicacion { get; set; }
         public string RutaImagen { get; set; }
 
         [ForeignKey(nameof(Categoria))]

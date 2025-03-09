@@ -11,6 +11,8 @@ namespace Domain.DTOs
     {
         public string Nombre { get; set; }
         public string Biografia { get; set; }
+        public string RutaFotoPerfil { get; set; }
+
     }
 }
 

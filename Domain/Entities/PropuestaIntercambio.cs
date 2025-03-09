@@ -28,7 +28,7 @@ namespace Domain.Entities
         public int IdObjetoSolicitado { get; set; }
         public virtual Objeto ObjetoSolicitado { get; set; }
         public EstatusPropuestaIntercambio Estado {  get; set; }
-        public DateOnly FechaPropuesta { get; set; }
+        public DateTime FechaPropuesta { get; set; }
 
 
     }

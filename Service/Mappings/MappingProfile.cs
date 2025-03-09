@@ -15,6 +15,7 @@ namespace Service.Mappings
             CreateMap<Categoria, CategoriaDTO>().ReverseMap();
             CreateMap<PropuestaIntercambio, PropuestaIntercambioDTO>().ReverseMap();
             CreateMap<Persona, PersonaDTO>().ReverseMap();
+            CreateMap<Chat, ChatDTO>().ReverseMap();
             CreateMap<Mensaje, MensajeDTO>().ReverseMap();
             CreateMap<Log, LogDTO>().ReverseMap();
 
