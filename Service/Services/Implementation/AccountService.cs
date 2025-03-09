@@ -42,26 +42,34 @@ namespace Service.Services.Implementation
 
         public async Task<LoginResponseVM> LoginAsync(LoginVM loginVM)
         {
-            var user = await _userManager.FindByEmailAsync(loginVM.Email);
-            if (user == null)
+            try
             {
+                var user = await _userManager.FindByEmailAsync(loginVM.Email);
+                if (user == null)
+                {
+                    return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
+                }
+
+                var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: false);
+                if (result.Succeeded)
+                {
+                    var token = await GenerateJwtToken(user, loginVM.RememberMe);
+                    return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, Success = true };
+                }
+
                 return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
-            }
-
-            var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: false);
-            if (result.Succeeded)
+            } catch (Exception ex)
             {
-                var token = await GenerateJwtToken(user, loginVM.RememberMe);
-                return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, Success = true };
+                return new LoginResponseVM { Message = $"Error al iniciar sesión: {ex.Message}" };
             }
-
-            return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
         }
 
         private async Task<string> GenerateJwtToken(ApplicationUser user, bool rememberMe)
         {
-            var roles = await _userManager.GetRolesAsync(user);
-            var claims = new List<Claim>
+            try
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
@@ -70,23 +78,28 @@ namespace Service.Services.Implementation
                 new Claim("RememberMe", rememberMe.ToString())
             };
 
-            // Agregar el rol a los claims
-            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+                // Agregar el rol a los claims
+                claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            //Expiración del token con "Remember Me"
-            var tokenExpiration = rememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120);
+                //Expiración del token con "Remember Me"
+                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120);
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: tokenExpiration,
-                signingCredentials: creds);
+                var token = new JwtSecurityToken(
+                    issuer: _configuration["Jwt:Issuer"],
+                    audience: _configuration["Jwt:Audience"],
+                    claims: claims,
+                    expires: tokenExpiration,
+                    signingCredentials: creds);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+                return new JwtSecurityTokenHandler().WriteToken(token);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al general el token: {ex.Message}");
+            }
         }
 
         public async Task<LoginResponseVM> ValidateJwtToken(string token)
@@ -118,9 +131,13 @@ namespace Service.Services.Implementation
 
                 return new LoginResponseVM { Message = rememberMe == "True" ? "Token válido (Con rememberMe)" : "Token válido (Sin rememberMe)", Token = token, Success = true };
             }
-            catch
+            catch (SecurityTokenValidationException)
             {
                 return new LoginResponseVM { Message = "Token Invalido" };
+            }
+            catch (Exception ex)
+            {
+                return new LoginResponseVM { Message = $"Error al validar el token {ex.Message}" };
             }
         }
 
