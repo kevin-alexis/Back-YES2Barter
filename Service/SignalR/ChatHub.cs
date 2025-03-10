@@ -17,18 +17,33 @@ namespace Service.SignalR
     {
         private readonly IMensajeService _mensajeService;
         private readonly IChatService _chatService;
+        private readonly ILogService _logService;
 
-        public ChatHub(IMensajeService mensajeService, IChatService chatService)
+        public ChatHub(IMensajeService mensajeService, IChatService chatService, ILogService logService)
         {
             _mensajeService = mensajeService;
             _chatService = chatService;
+            _logService = logService;
         }
 
         // Entrar a un grupo - IdChat
         public async Task ConectarAlChat(string idChat)
         {
-            var idEmisor = Context.UserIdentifier;
-            await Groups.AddToGroupAsync(Context.ConnectionId, idChat);
+            try
+            {
+                var idEmisor = Context.UserIdentifier;
+                await Groups.AddToGroupAsync(Context.ConnectionId, idChat);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ConectarAlChat)}, de la clase {nameof(ChatHub)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         // Enviar Mensaje al grupo
@@ -58,6 +73,12 @@ namespace Service.SignalR
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(EnviarMensaje)}, de la clase {nameof(ChatHub)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 Console.WriteLine($"Error en EnviarMensaje: {ex.Message}");
                 throw;
             }

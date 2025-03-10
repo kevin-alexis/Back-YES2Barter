@@ -12,9 +12,11 @@ namespace WebAPI.Controllers
     [ApiController]
     public class CategoriaController : BaseController<Categoria, CategoriaDTO, ICategoriaService>
     {
-        public CategoriaController(ICategoriaService service, IMapper mapper) : base(service, mapper)
+        private readonly ILogService _logService; 
+        public CategoriaController(ICategoriaService service, IMapper mapper, ILogService logService) : base(service, mapper, logService)
         {
-            
+            _logService = logService;
+
         }
 
     }

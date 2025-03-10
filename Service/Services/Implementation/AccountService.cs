@@ -2,8 +2,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.Account;
+using Domain.ViewModels.CloseChat;
 using Domain.ViewModels.CreateAccountVM;
 using Domain.ViewModels.Login;
 using Domain.ViewModels.Response;
@@ -25,12 +27,15 @@ namespace Service.Services.Implementation
         private readonly IConfiguration _configuration;
         private readonly DataBaseContext _context;
         private readonly string _connectionString;
+        private readonly ILogService _logService;
         public AccountService(
             Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
             Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, 
             SignInManager<ApplicationUser> signInManager, 
             IConfiguration configuration,
-            DataBaseContext context)
+            DataBaseContext context,
+            ILogService logService
+            )
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -38,6 +43,7 @@ namespace Service.Services.Implementation
             _configuration = configuration;
             _context = context;
             _connectionString = _context.Database.GetConnectionString();
+            _logService = logService;
         }
 
         public async Task<LoginResponseVM> LoginAsync(LoginVM loginVM)
@@ -58,9 +64,16 @@ namespace Service.Services.Implementation
                 }
 
                 return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                return new LoginResponseVM { Message = $"Error al iniciar sesión: {ex.Message}" };
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(LoginAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
             }
         }
 
@@ -99,7 +112,13 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error al general el token: {ex.Message}");
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GenerateJwtToken)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
             }
         }
 
@@ -132,22 +151,37 @@ namespace Service.Services.Implementation
 
                 return new LoginResponseVM { Message = rememberMe == "True" ? "Token válido (Con rememberMe)" : "Token válido (Sin rememberMe)", Token = token, Success = true };
             }
-            catch (SecurityTokenValidationException)
-            {
-                return new LoginResponseVM { Message = "Token Invalido" };
-            }
             catch (Exception ex)
             {
-                return new LoginResponseVM { Message = $"Error al validar el token {ex.Message}" };
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ValidateJwtToken)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return new LoginResponseVM { Message = "Token Invalido" };
             }
         }
 
         public async Task<List<IdentityRole>> GetAllRoles()
         {
-            List<IdentityRole> roles = new List<IdentityRole>();
+            try
+            {
+                List<IdentityRole> roles = new List<IdentityRole>();
 
-            roles = await _roleManager.Roles.ToListAsync();
-            return roles;
+                roles = await _roleManager.Roles.ToListAsync();
+                return roles;
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllRoles)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         public async Task<EndpointResponse<string>> CreateAccountAsync(CreateAccountVM createAccountVM)
@@ -182,6 +216,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CreateAccountAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
@@ -228,6 +268,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CreateUserAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
@@ -315,6 +361,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(UpdateAccountAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
@@ -368,68 +420,83 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                return new EndpointResponse<List<AccountVM>>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = $"Error inesperado: {ex.Message}",
-                    Success = false,
-                    Data = null
-                };
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllAccounts)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+
             }
         }
 
         public async Task<EndpointResponse<AccountVM>> GetById(int idPersona)
         {
-            if (idPersona <= 0)
+            try
             {
+                if (idPersona <= 0)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "El id es requerido",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var result = await _context.Personas
+                    .Include(x => x.Usuario)
+                    .FirstOrDefaultAsync(x => x.Id == idPersona && x.EsBorrado == false);
+
+                if (result == null)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "No se encontró la cuenta con ese id",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var roles = await _userManager.GetRolesAsync(result.Usuario);
+
+                var userRole = roles.FirstOrDefault();
+                var roleId = string.Empty;
+
+                if (userRole != null)
+                {
+                    var role = await _roleManager.FindByNameAsync(userRole);
+                    roleId = role?.Id;
+                }
+
+                var accountVM = new AccountVM
+                {
+                    IdPersona = result.Id.ToString(),
+                    Nombre = result.Nombre,
+                    Email = result.Usuario.Email,
+                    IdUsuario = result.Usuario.Id.ToString(),
+                    Rol = userRole ?? "No Role",
+                    IdRol = roleId ?? "No Role Id"
+                };
+
                 return new EndpointResponse<AccountVM>
                 {
-                    Message = "El id es requerido",
-                    Success = false,
-                    Data = new AccountVM()
+                    Message = "Cuenta obtenida con éxito",
+                    Success = true,
+                    Data = accountVM
                 };
             }
-
-            var result = await _context.Personas
-                .Include(x => x.Usuario)
-                .FirstOrDefaultAsync(x => x.Id == idPersona && x.EsBorrado == false);
-
-            if (result == null)
+            catch (Exception ex)
             {
-                return new EndpointResponse<AccountVM>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = "No se encontró la cuenta con ese id",
-                    Success = false,
-                    Data = new AccountVM()
-                };
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetById)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
             }
-
-            var roles = await _userManager.GetRolesAsync(result.Usuario);
-
-            var userRole = roles.FirstOrDefault();
-            var roleId = string.Empty;
-
-            if (userRole != null)
-            {
-                var role = await _roleManager.FindByNameAsync(userRole);
-                roleId = role?.Id; 
-            }
-
-            var accountVM = new AccountVM
-            {
-                IdPersona = result.Id.ToString(),
-                Nombre = result.Nombre,
-                Email = result.Usuario.Email,
-                IdUsuario = result.Usuario.Id.ToString(),
-                Rol = userRole ?? "No Role",
-                IdRol = roleId ?? "No Role Id"
-            };
-
-            return new EndpointResponse<AccountVM>
-            {
-                Message = "Cuenta obtenida con éxito",
-                Success = true,
-                Data = accountVM
-            };
         }
 
         public async Task<EndpointResponse<string>> DeleteAccountAsync(int id)
@@ -458,6 +525,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(DeleteAccountAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }

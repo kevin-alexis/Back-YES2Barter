@@ -19,10 +19,14 @@ namespace WebAPI.Controllers
     {
         private readonly IChatService _service;
         private readonly IMensajeService _mensajeService;
-        public ChatController(IChatService service, IMensajeService mensajeService, IMapper mapper) : base(service, mapper)
+        private readonly ILogService _logService;
+        public ChatController(IChatService service, IMensajeService mensajeService, IMapper mapper, ILogService logService) : base(service, mapper, logService)
         {
             _service = service;
             _mensajeService = mensajeService;
+            _logService = logService;
+            _logService = logService;
+
         }
 
         [HttpGet("GetAllByIdUsuario/{idUsuario}")]
@@ -36,6 +40,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdUsuario)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -51,6 +61,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CloseChat)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }

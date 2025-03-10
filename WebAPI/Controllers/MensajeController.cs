@@ -17,9 +17,12 @@ namespace WebAPI.Controllers
     public class MensajeController : BaseController<Mensaje, MensajeDTO, IMensajeService>
     {
         private readonly IMensajeService _service;
-        public MensajeController(IMensajeService service, IMapper mapper) : base(service, mapper)
+        private readonly ILogService _logService;
+        public MensajeController(IMensajeService service, IMapper mapper, ILogService logService) : base(service, mapper, logService)
         {
             _service = service;
+            _logService = logService;
+
         }
 
         [HttpGet("GetAllByIdChat/{idChat}")]
@@ -33,6 +36,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdChat)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }

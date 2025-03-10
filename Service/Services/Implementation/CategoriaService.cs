@@ -23,7 +23,7 @@ namespace Service.Services.Implementation
     public class CategoriaService : BaseService<Categoria, CategoriaDTO>, ICategoriaService
     {
         private new readonly DataBaseContext _context;
-        public CategoriaService(DataBaseContext context, IMapper mapper, Logger logger) : base(context, mapper, logger)
+        public CategoriaService(DataBaseContext context, IMapper mapper, ILogService logService) : base(context, mapper, logService)
         {
             _context = context;   
         }

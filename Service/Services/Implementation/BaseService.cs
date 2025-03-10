@@ -16,9 +16,9 @@ namespace Service.Services.Implementation
         protected readonly DataBaseContext _context;
         protected readonly IMapper _mapper;
         protected readonly DbSet<T> _dbSet;
-        private readonly Logger _logger;
+        private readonly ILogService _logger;
 
-        public BaseService(DataBaseContext context, IMapper mapper, Logger logger)
+        public BaseService(DataBaseContext context, IMapper mapper, ILogService logger)
         {
             _context = context;
             _mapper = mapper;
@@ -35,7 +35,7 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                await _logger.LogAsync("Error", "Error al obtener todos los elementos", ex.ToString());
+                await _logger.AddAsync(new Domain.DTOs.LogDTO { Nivel = "Error", Mensaje = "Error al obtener todos los elementos", Excepcion = ex.ToString() });
                 throw new Exception("Error al obtener todos los elementos", ex);
             }
         }
@@ -53,7 +53,7 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                await _logger.LogAsync("Error", $"Error al obtener el elemento con id {id}", ex.ToString());
+                await _logger.AddAsync(new Domain.DTOs.LogDTO { Nivel = "Error", Mensaje = $"Error al obtener el elemento con id {id}", Excepcion = ex.ToString() });
                 throw new Exception($"Error al obtener el elemento con id {id}", ex);
             }
         }
@@ -68,7 +68,7 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                await _logger.LogAsync("Error", "Error al agregar el elemento", ex.ToString());
+                await _logger.AddAsync(new Domain.DTOs.LogDTO { Nivel = "Error", Mensaje = "Error al agregar el elemento", Excepcion = ex.ToString() });
                 throw new Exception("Error al agregar el elemento", ex);
             }
         }
@@ -90,7 +90,7 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                await _logger.LogAsync("Error", "Error al actualizar el elemento", ex.ToString());
+                await _logger.AddAsync(new Domain.DTOs.LogDTO { Nivel = "Error", Mensaje = "Error al actualizar el elemento", Excepcion = ex.ToString() });
                 throw new Exception("Error al actualizar el elemento", ex);
             }
         }
@@ -113,7 +113,7 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                await _logger.LogAsync("Error", $"Error al eliminar el elemento con id {id}", ex.ToString());
+                await _logger.AddAsync(new Domain.DTOs.LogDTO { Nivel = "Error", Mensaje = $"Error al eliminar el elemento con id {id}", Excepcion = ex.ToString() });
                 throw new Exception($"Error al eliminar el elemento con id {id}", ex);
             }
         }
