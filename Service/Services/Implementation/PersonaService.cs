@@ -5,13 +5,20 @@ using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Services.Contracts;
+using Service.Logging;
+using Domain.ViewModels.Response;
+using System.IdentityModel.Tokens.Jwt;
+using static Domain.Enumerations.Enums;
 
 namespace Service.Services.Implementation
 {
     public class PersonaService : BaseService<Persona, PersonaDTO>, IPersonaService
     {
-        public PersonaService(DataBaseContext context, IMapper mapper) : base(context, mapper)
+        private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
+        public PersonaService(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager,
+           DataBaseContext context, IMapper mapper, Logger logger) : base(context, mapper, logger)
         {
+            _userManager = userManager;
         }
 
         // Obtener Persona por Id usando Entity Framework
@@ -48,6 +55,7 @@ namespace Service.Services.Implementation
                     return default(PersonaDTO);
                 }
             }
+
             catch (Exception ex)
             {
                 throw new Exception($"Error al obtener el elemento con id {id}", ex);

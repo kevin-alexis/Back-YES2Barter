@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Repository.Context;
+using Service.Logging;
 using Service.Services.Contracts;
 using System;
 using System.Collections.Generic;
@@ -14,15 +16,17 @@ namespace Service.Services.Implementation
         protected readonly DataBaseContext _context;
         protected readonly IMapper _mapper;
         protected readonly DbSet<T> _dbSet;
+        private readonly Logger _logger;
 
-        public BaseService(DataBaseContext context, IMapper mapper)
+        public BaseService(DataBaseContext context, IMapper mapper, Logger logger)
         {
             _context = context;
             _mapper = mapper;
             _dbSet = _context.Set<T>();
+            _logger = logger;
         }
 
-        public virtual async Task<IEnumerable<TDto>> GetAll()
+        virtual public async Task<IEnumerable<TDto>> GetAll()
         {
             try
             {
@@ -31,11 +35,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logger.LogAsync("Error", "Error al obtener todos los elementos", ex.ToString());
                 throw new Exception("Error al obtener todos los elementos", ex);
             }
         }
 
-        public virtual async Task<TDto> GetById(int id)
+        virtual public async Task<TDto> GetById(int id)
         {
             try
             {
@@ -48,11 +53,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logger.LogAsync("Error", $"Error al obtener el elemento con id {id}", ex.ToString());
                 throw new Exception($"Error al obtener el elemento con id {id}", ex);
             }
         }
 
-        public virtual async Task Add(TDto itemDto)
+        virtual public async Task Add(TDto itemDto)
         {
             try
             {
@@ -62,25 +68,34 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logger.LogAsync("Error", "Error al agregar el elemento", ex.ToString());
                 throw new Exception("Error al agregar el elemento", ex);
             }
         }
 
-        public virtual async Task Update(TDto itemDto)
+        virtual public async Task Update(TDto itemDto)
         {
             try
             {
                 var item = _mapper.Map<T>(itemDto);
+
+                var trackedEntity = _context.Set<T>().Local.FirstOrDefault(e => e.Id == item.Id);
+                if (trackedEntity != null)
+                {
+                    _context.Entry(trackedEntity).State = EntityState.Detached;
+                }
+
                 _dbSet.Update(item);
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
+                await _logger.LogAsync("Error", "Error al actualizar el elemento", ex.ToString());
                 throw new Exception("Error al actualizar el elemento", ex);
             }
         }
 
-        public virtual async Task Delete(int id)
+        virtual public async Task Delete(int id)
         {
             try
             {
@@ -98,6 +113,7 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logger.LogAsync("Error", $"Error al eliminar el elemento con id {id}", ex.ToString());
                 throw new Exception($"Error al eliminar el elemento con id {id}", ex);
             }
         }

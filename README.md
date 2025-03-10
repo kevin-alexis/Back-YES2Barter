@@ -14,6 +14,7 @@ A pesar de la existencia de plataformas como Facebook Marketplace o Mercado Libr
 
 ## Integrantes
 - **kevin-alexis, Bello Maldonado Kevin Alexis - 22393124, 22393124@utcancun.edu.mx**
+- **Jacob0418, Coronado Cob Jose Antonio - 22393130, 22393130@utcancun.edu.mx**
 - **mezaaziel06, Hernandez Meza Aziel Michell - 22393132, 22393132@utcancun.edu.mx**
 - **Solrac619, Garcia Padilla Carlos Giovanny - 21393201, 21393201@utcancun.edu.mx**
 
