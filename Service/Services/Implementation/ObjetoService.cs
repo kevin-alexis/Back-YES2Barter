@@ -50,7 +50,7 @@ namespace Service.Services.Implementation
                 }
 
                 var result = await _context.Objetos
-                    .Where(x => x.Nombre.StartsWith(name) && x.EsBorrado == false)
+                    .Where(x => x.Nombre.StartsWith(name) && x.EsBorrado == false && x.Estado == EstatusObjeto.DISPONIBLE)
                     .ToListAsync();
 
                 if (!result.Any())
@@ -108,7 +108,7 @@ namespace Service.Services.Implementation
                 }
 
                 var result = await _context.Objetos
-                    .Where(x => x.IdCategoria == idCategoria && x.EsBorrado == false)
+                    .Where(x => x.IdCategoria == idCategoria && x.EsBorrado == false && x.Estado == EstatusObjeto.DISPONIBLE)
                     .ToListAsync();
 
                 if (!result.Any())
@@ -145,6 +145,64 @@ namespace Service.Services.Implementation
                 {
                     Nivel = "Error",
                     Mensaje = $"Error en el método {nameof(GetAllByIdCategoria)}, de la clase {nameof(ObjetoService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
+        public async Task<EndpointResponse<List<ObjetoDTO>>> GetAllByIdUsuario(string idUsuario)
+        {
+            try
+            {
+                if (idUsuario == null || idUsuario == "")
+                {
+                    return new EndpointResponse<List<ObjetoDTO>>
+                    {
+                        Message = "El id es requerido",
+                        Success = false,
+                        Data = new List<ObjetoDTO>()
+                    };
+                }
+
+                var result = await _context.Objetos
+                    .Where(x => x.IdUsuario == idUsuario && x.EsBorrado == false && x.Estado == EstatusObjeto.DISPONIBLE)
+                    .ToListAsync();
+
+                if (!result.Any())
+                {
+                    return new EndpointResponse<List<ObjetoDTO>>
+                    {
+                        Message = "No se encontraron objetos con ese usuario",
+                        Success = false,
+                        Data = new List<ObjetoDTO>()
+                    };
+                }
+
+                var objetoDTOs = result.Select(objeto => new ObjetoDTO
+                {
+                    Id = objeto.Id,
+                    Nombre = objeto.Nombre,
+                    Descripcion = objeto.Descripcion,
+                    FechaPublicacion = objeto.FechaPublicacion,
+                    RutaImagen = objeto.RutaImagen,
+                    Estado = objeto.Estado,
+                    EsBorrado = objeto.EsBorrado
+                }).ToList();
+
+                return new EndpointResponse<List<ObjetoDTO>>
+                {
+                    Message = "Objetos obtenidos con éxito",
+                    Success = true,
+                    Data = objetoDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdUsuario)}, de la clase {nameof(ObjetoService)}: {ex.Message}",
                     Excepcion = ex.ToString()
                 });
                 throw;

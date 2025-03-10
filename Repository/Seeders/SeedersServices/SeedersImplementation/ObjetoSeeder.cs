@@ -23,6 +23,9 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
         {
             if (!_context.Objetos.Any())
             {
+                var persona = _context.Personas.FirstOrDefault(); 
+                if (persona == null) throw new Exception("No se encontró un usuario para asignar.");
+
                 var objetos = new List<Objeto>
                 {
                    new Objeto
@@ -33,6 +36,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                         IdCategoria = 1,
                         Estado = EstatusObjeto.DISPONIBLE,
                         RutaImagen = "ruta/imagen1.jpg",
+                        IdUsuario = persona.IdUsuario
                     },
                     new Objeto
                     {
@@ -42,6 +46,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                         IdCategoria = 2,
                         Estado = EstatusObjeto.DISPONIBLE,
                         RutaImagen = "ruta/imagen2.jpg",
+                        IdUsuario = persona.IdUsuario
                     },
                     new Objeto
                     {
@@ -51,6 +56,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
                         IdCategoria = 3,
                         Estado = EstatusObjeto.DISPONIBLE,
                         RutaImagen = "ruta/imagen3.jpg",
+                        IdUsuario = persona.IdUsuario
                     }
                 };
 

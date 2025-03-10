@@ -46,7 +46,7 @@ namespace Service.Services.Implementation
                 {
                     if (logDTO.Excepcion.Contains("NullReferenceException"))
                     {
-                        logDTO.Nivel = "Error"; 
+                        logDTO.Nivel = "Error";
                     }
                     else if (logDTO.Excepcion.Contains("ArgumentException"))
                     {
@@ -55,6 +55,12 @@ namespace Service.Services.Implementation
                     else if (logDTO.Excepcion.Contains("InvalidOperationException"))
                     {
                         logDTO.Nivel = "Error";
+                    }
+                    else if (logDTO.Excepcion.Contains("OutOfMemoryException") ||
+                             logDTO.Excepcion.Contains("AccessViolationException") ||
+                             logDTO.Excepcion.Contains("StackOverflowException"))
+                    {
+                        logDTO.Nivel = "Critical";
                     }
                     else
                     {
@@ -65,6 +71,7 @@ namespace Service.Services.Implementation
                 {
                     logDTO.Nivel = "Info";
                 }
+
                 var item = _mapper.Map<Log>(logDTO);
                 await _context.Logs.AddAsync(item);
                 await _context.SaveChangesAsync();

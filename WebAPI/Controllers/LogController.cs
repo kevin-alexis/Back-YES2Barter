@@ -21,7 +21,7 @@ namespace WebAPI.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Administrador")]
-        virtual public async Task<ActionResult<IEnumerable<LogDTO>>> GetAll()
+        public async Task<ActionResult<IEnumerable<LogDTO>>> GetAll()
         {
             try
             {
@@ -42,7 +42,7 @@ namespace WebAPI.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Administrador")]
-        virtual public async Task<ActionResult> Add([FromBody] LogDTO logDTO)
+        public async Task<ActionResult> Add([FromBody] LogDTO logDTO)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace WebAPI.Controllers
 
         [HttpGet("{id}")]
         [Authorize(Roles = "Administrador")]
-        virtual public async Task<ActionResult<LogDTO>> GetById(int id)
+        public async Task<ActionResult<LogDTO>> GetById(int id)
         {
             try
             {

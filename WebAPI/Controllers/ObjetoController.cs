@@ -40,6 +40,27 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
+        [HttpGet("GetAllByIdUsuario/{idUsaurio}")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        public async Task<ActionResult<IEnumerable<ObjetoDTO>>> GetAllByIdUsuario(string idUsaurio)
+        {
+            try
+            {
+                var itemsDto = await _service.GetAllByIdUsuario(idUsaurio);
+                return Ok(itemsDto);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdUsuario)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
+
         [HttpGet("GetAllByIdCategoria/{idCategoria}")]
         [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult<IEnumerable<ObjetoDTO>>> GetAllByIdCategoria(int idCategoria)

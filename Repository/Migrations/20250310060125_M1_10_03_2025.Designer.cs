@@ -12,8 +12,8 @@ using Repository.Context;
 namespace Repository.Migrations
 {
     [DbContext(typeof(DataBaseContext))]
-    [Migration("20250309191814_M1_09_03_2025")]
-    partial class M1_09_03_2025
+    [Migration("20250310060125_M1_10_03_2025")]
+    partial class M1_10_03_2025
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -235,6 +235,10 @@ namespace Repository.Migrations
                     b.Property<int>("IdCategoria")
                         .HasColumnType("int");
 
+                    b.Property<string>("IdUsuario")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -246,6 +250,8 @@ namespace Repository.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("IdCategoria");
+
+                    b.HasIndex("IdUsuario");
 
                     b.ToTable("Tbl_Objetos");
                 });
@@ -523,7 +529,15 @@ namespace Repository.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.ApplicationUser", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("IdUsuario")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Categoria");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Domain.Entities.Persona", b =>
