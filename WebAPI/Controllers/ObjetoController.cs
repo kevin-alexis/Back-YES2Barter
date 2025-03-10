@@ -40,13 +40,13 @@ namespace WebAPI.Controllers
             return Ok(result);
         }
 
-        [HttpGet("GetAllByIdUsuario/{idUsaurio}")]
+        [HttpGet("GetAllByIdUsuario/{idUsuario}")]
         [Authorize(Roles = "Administrador, Intercambiador")]
-        public async Task<ActionResult<IEnumerable<ObjetoDTO>>> GetAllByIdUsuario(string idUsaurio)
+        public async Task<ActionResult<IEnumerable<ObjetoDTO>>> GetAllByIdUsuario(string idUsuario)
         {
             try
             {
-                var itemsDto = await _service.GetAllByIdUsuario(idUsaurio);
+                var itemsDto = await _service.GetAllByIdUsuario(idUsuario);
                 return Ok(itemsDto);
             }
             catch (Exception ex)
