@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Services.Contracts;
+using Service.Services.Implementation;
 
 
 
@@ -17,10 +18,18 @@ namespace WebAPI.Controllers
     {
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly DataBaseContext _dbContext;
-        public PropuestaIntercambioController(IPropuestaIntercambioService service, IMapper mapper, IWebHostEnvironment hostingEnvironment, DataBaseContext dbContext) : base(service, mapper)
+        private readonly ILogService _logService;
+        public PropuestaIntercambioController(
+            IPropuestaIntercambioService service, 
+            IMapper mapper, 
+            IWebHostEnvironment hostingEnvironment, 
+            DataBaseContext dbContext,
+            ILogService logService
+            ) : base(service, mapper, logService)
         {
             _hostingEnvironment = hostingEnvironment;
             _dbContext = dbContext;
+            _logService = logService;
         }
 
         [HttpGet("{id}")]
@@ -37,6 +46,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetById)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -51,6 +66,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdObjeto)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }

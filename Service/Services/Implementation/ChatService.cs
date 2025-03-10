@@ -23,67 +23,84 @@ namespace Service.Services.Implementation
     {
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
         private readonly IPropuestaIntercambioService _propuestaIntercambioService;
+        private readonly ILogService _logService;
 
-        private readonly Logger _logger;
-
-        public ChatService(DataBaseContext context, IMapper mapper, Logger logger, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, IPropuestaIntercambioService propuestaIntercambioService) : base(context, mapper, logger)
+        public ChatService(
+            DataBaseContext context, 
+            IMapper mapper, 
+            ILogService logService,
+            Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
+            IPropuestaIntercambioService propuestaIntercambioService) : base(context, mapper, logService)
         {
             _userManager = userManager;
-            _logger = logger;
+            _logService = logService;
             _propuestaIntercambioService = propuestaIntercambioService;
         }
 
         public async Task<EndpointResponse<List<GetChatsVM>>> GetAllByIdUsuario(string idUsuario)
         {
-            if (idUsuario == null)
+            try
             {
+                if (idUsuario == null)
+                {
+                    return new EndpointResponse<List<GetChatsVM>>
+                    {
+                        Message = "El id es requerido",
+                        Success = false,
+                        Data = new List<GetChatsVM>()
+                    };
+                }
+
+                var result = await _context.Chats
+                    .Where(x => (x.IdUsuario1 == idUsuario || x.IdUsuario2 == idUsuario) && !x.EsBorrado)
+                    .ToListAsync();
+
+                if (!result.Any())
+                {
+                    return new EndpointResponse<List<GetChatsVM>>
+                    {
+                        Message = "No se encontraron chats con ese usuario",
+                        Success = false,
+                        Data = new List<GetChatsVM>()
+                    };
+                }
+                var chatDTOs = new List<GetChatsVM>();
+
+                foreach (var chat in result)
+                {
+                    var personaEmisor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario1);
+                    var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario2);
+                    var propuestasIntercambios = await _context.PropuestasIntercambios.FirstOrDefaultAsync(p => p.Id == chat.IdPropuestaIntercambio);
+
+                    chatDTOs.Add(new GetChatsVM
+                    {
+                        Id = chat.Id,
+                        IdUsuario1 = chat.IdUsuario1,
+                        PersonaEmisor = personaEmisor,
+                        IdUsuario2 = chat.IdUsuario2,
+                        PersonaReceptor = personaReceptor,
+                        IdPropuestaIntercambio = chat.IdPropuestaIntercambio,
+                        PropuestaIntercambio = propuestasIntercambios
+                    });
+                }
+
                 return new EndpointResponse<List<GetChatsVM>>
                 {
-                    Message = "El id es requerido",
-                    Success = false,
-                    Data = new List<GetChatsVM>()
+                    Message = "Chats obtenidos con éxito",
+                    Success = true,
+                    Data = chatDTOs
                 };
             }
-
-            var result = await _context.Chats
-                .Where(x => (x.IdUsuario1 == idUsuario || x.IdUsuario2 == idUsuario) && !x.EsBorrado)
-                .ToListAsync();
-
-            if (!result.Any())
+            catch (Exception ex)
             {
-                return new EndpointResponse<List<GetChatsVM>>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = "No se encontraron chats con ese usuario",
-                    Success = false,
-                    Data = new List<GetChatsVM>()
-                };
-            }
-            var chatDTOs = new List<GetChatsVM>();
-
-            foreach (var chat in result)
-            {
-                var personaEmisor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario1);
-                var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario2);
-                var propuestasIntercambios = await _context.PropuestasIntercambios.FirstOrDefaultAsync(p => p.Id == chat.IdPropuestaIntercambio);
-
-                chatDTOs.Add(new GetChatsVM
-                {
-                    Id = chat.Id,
-                    IdUsuario1 = chat.IdUsuario1,
-                    PersonaEmisor = personaEmisor,
-                    IdUsuario2 = chat.IdUsuario2,
-                    PersonaReceptor = personaReceptor,
-                    IdPropuestaIntercambio = chat.IdPropuestaIntercambio,
-                    PropuestaIntercambio = propuestasIntercambios
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdUsuario)}, de la clase {nameof(ChatService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
                 });
+                throw;
             }
-
-            return new EndpointResponse<List<GetChatsVM>>
-            {
-                Message = "Chats obtenidos con éxito",
-                Success = true,
-                Data = chatDTOs
-            };
         }
 
         public async Task CloseChat(int idChat, bool isSuccess)
@@ -107,7 +124,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                await _logger.LogAsync("Error", "Error al actualizar el elemento", ex.ToString());
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CloseChat)}, de la clase {nameof(ChatService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 throw new Exception("Error al actualizar el elemento", ex);
             }
         }

@@ -2,10 +2,12 @@
 using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.CreateObjeto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Services.Contracts;
+using Service.Services.Implementation;
 
 namespace WebAPI.Controllers
 {
@@ -16,14 +18,22 @@ namespace WebAPI.Controllers
         private readonly IWebHostEnvironment _hostingEnvironment;
         private readonly DataBaseContext _dbContext;
         private readonly IPropuestaIntercambioService _propuestaIntercambioService;
-        public ObjetoController(IObjetoService service, IPropuestaIntercambioService propuestaIntercambioService, IMapper mapper, IWebHostEnvironment hostingEnvironment, DataBaseContext dbContext) : base(service, mapper)
+        private readonly ILogService _logService;
+        public ObjetoController(IObjetoService service, 
+            IPropuestaIntercambioService propuestaIntercambioService, 
+            IMapper mapper, IWebHostEnvironment hostingEnvironment, 
+            DataBaseContext dbContext,
+             ILogService logService) : base(service, mapper, logService)
         {
             _hostingEnvironment = hostingEnvironment;
             _dbContext = dbContext;
             _propuestaIntercambioService = propuestaIntercambioService;
+            _logService = logService;
+
         }
 
         [HttpPost("GetByName")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<IActionResult> GetByName([FromBody] string name)
         {
             var result = await _service.GetByName(name);
@@ -31,6 +41,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("GetAllByIdCategoria/{idCategoria}")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult<IEnumerable<ObjetoDTO>>> GetAllByIdCategoria(int idCategoria)
         {
             try
@@ -40,11 +51,18 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdCategoria)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
 
         [HttpPost("create-objeto")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult> CreateObjeto([FromForm] CreateObjetoVM createObjetoVM)
         {
             var ruta = _hostingEnvironment.ContentRootPath;
@@ -60,12 +78,18 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
-
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CreateObjeto)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
 
         [HttpPut("update-objeto/{idObjeto}")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult> ActualizarObjeto([FromForm] CreateObjetoVM createObjetoVM, int idObjeto)
         {
             var ruta = _hostingEnvironment.ContentRootPath;
@@ -109,10 +133,17 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ActualizarObjeto)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
 
+        [Authorize(Roles = "Administrador, Intercambiador")]
         override public async Task<ActionResult> Delete(int id)
         {
             try
@@ -129,6 +160,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(Delete)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }

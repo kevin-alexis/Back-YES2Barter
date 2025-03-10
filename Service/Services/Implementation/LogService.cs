@@ -24,7 +24,7 @@ namespace Service.Services.Implementation
             _mapper = mapper;
         }
 
-        virtual public async Task<IEnumerable<LogDTO>> GetAll()
+        public async Task<IEnumerable<LogDTO>> GetAll()
         {
             try
             {
@@ -37,10 +37,34 @@ namespace Service.Services.Implementation
             }
         }
 
-        virtual public async Task Add(LogDTO logDTO)
+        public async Task AddAsync(LogDTO logDTO)
         {
             try
             {
+                logDTO.Fecha = DateTime.Now;
+                if (!string.IsNullOrEmpty(logDTO.Excepcion))
+                {
+                    if (logDTO.Excepcion.Contains("NullReferenceException"))
+                    {
+                        logDTO.Nivel = "Error"; 
+                    }
+                    else if (logDTO.Excepcion.Contains("ArgumentException"))
+                    {
+                        logDTO.Nivel = "Warning";
+                    }
+                    else if (logDTO.Excepcion.Contains("InvalidOperationException"))
+                    {
+                        logDTO.Nivel = "Error";
+                    }
+                    else
+                    {
+                        logDTO.Nivel = "Info";
+                    }
+                }
+                else
+                {
+                    logDTO.Nivel = "Info";
+                }
                 var item = _mapper.Map<Log>(logDTO);
                 await _context.Logs.AddAsync(item);
                 await _context.SaveChangesAsync();
@@ -51,7 +75,7 @@ namespace Service.Services.Implementation
             }
         }
 
-        virtual public async Task<LogDTO> GetById(int id)
+        public async Task<LogDTO> GetById(int id)
         {
             try
             {

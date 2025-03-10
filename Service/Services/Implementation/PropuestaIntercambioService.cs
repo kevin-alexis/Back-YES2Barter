@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Repository.Context;
 using Service.Logging;
 using Service.Services.Contracts;
+using Service.SignalR;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -26,51 +27,71 @@ namespace Service.Services.Implementation
     {
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
         private readonly IObjetoService _objetoService;
+        private readonly ILogService _logService;
         public PropuestaIntercambioService(
-            DataBaseContext context, IMapper mapper, Logger logger, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, IObjetoService objetoService) : base(context, mapper, logger)
+            DataBaseContext context, 
+            IMapper mapper, Logger logger, 
+            Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
+            IObjetoService objetoService,
+            ILogService logService
+            ) : base(context, mapper, logService)
         {
             _userManager = userManager;
             _objetoService = objetoService;
+            _logService = logService;
         }
 
         public async Task<EndpointResponse<List<PropuestaIntercambioDTO>>> GetAllByIdObjeto(int idObjeto)
         {
-            if (idObjeto <= 0)
+            try
             {
+                if (idObjeto <= 0)
+                {
+                    return new EndpointResponse<List<PropuestaIntercambioDTO>>
+                    {
+                        Message = "El id es requerido",
+                        Success = false,
+                        Data = new List<PropuestaIntercambioDTO>()
+                    };
+                }
+
+                var result = await _context.PropuestasIntercambios
+                    .Where(x => x.EsBorrado == false)
+                    .ToListAsync();
+
+                if (!result.Any())
+                {
+                    return new EndpointResponse<List<PropuestaIntercambioDTO>>
+                    {
+                        Message = "No se encontraron propuestas de intercambios con ese objeto",
+                        Success = false,
+                        Data = new List<PropuestaIntercambioDTO>()
+                    };
+                }
+
+                var propuestaIntercambioDTOs = result.Select(propuestaIntercambio => new PropuestaIntercambioDTO
+                {
+                    Id = propuestaIntercambio.Id,
+                    EsBorrado = propuestaIntercambio.EsBorrado
+                }).ToList();
+
                 return new EndpointResponse<List<PropuestaIntercambioDTO>>
                 {
-                    Message = "El id es requerido",
-                    Success = false,
-                    Data = new List<PropuestaIntercambioDTO>()
+                    Message = "Propuestas de intercambios obtenidas con éxito",
+                    Success = true,
+                    Data = propuestaIntercambioDTOs
                 };
             }
-
-            var result = await _context.PropuestasIntercambios
-                .Where(x => x.EsBorrado == false)
-                .ToListAsync();
-
-            if (!result.Any())
+            catch (Exception ex)
             {
-                return new EndpointResponse<List<PropuestaIntercambioDTO>>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = "No se encontraron propuestas de intercambios con ese objeto",
-                    Success = false,
-                    Data = new List<PropuestaIntercambioDTO>()
-                };
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdObjeto)}, de la clase {nameof(PropuestaIntercambioService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
             }
-
-            var propuestaIntercambioDTOs = result.Select(propuestaIntercambio => new PropuestaIntercambioDTO
-            {
-                Id = propuestaIntercambio.Id,
-                EsBorrado = propuestaIntercambio.EsBorrado
-            }).ToList();
-
-            return new EndpointResponse<List<PropuestaIntercambioDTO>>
-            {
-                Message = "Propuestas de intercambios obtenidas con éxito",
-                Success = true,
-                Data = propuestaIntercambioDTOs
-            };
         }
 
         public async Task ChangeStatus(int IdPropuestaIntercambio, EstatusPropuestaIntercambio estatus)
@@ -110,7 +131,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                //await _logger.LogAsync("Error", "Error al actualizar el elemento", ex.ToString());
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ChangeStatus)}, de la clase {nameof(PropuestaIntercambioService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 throw new Exception("Error al actualizar el elemento", ex);
             }
         }

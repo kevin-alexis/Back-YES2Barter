@@ -24,128 +24,153 @@ namespace Service.Services.Implementation
     {
         private new readonly DataBaseContext _context;
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
-        private readonly Logger _logger;
+        private readonly ILogService _logService;
         private readonly IChatService _chatService;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
         public MensajeService(
             DataBaseContext context, 
-            IMapper mapper, Logger logger, 
+            IMapper mapper, ILogService logService, 
             Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
             IChatService chatService,
             IHttpContextAccessor httpContextAccessor
-            ) : base(context, mapper, logger)
+            ) : base(context, mapper, logService)
         {
             _context = context;
             _userManager = userManager;
-            _logger = logger;
+            _logService = logService;
             _chatService = chatService;
             _httpContextAccessor = httpContextAccessor;
-
         }
 
         public async Task GuardarMensaje(int idChat, string idEmisor, string idReceptor, string contenido)
         {
-            var mensaje = new Mensaje
+            try
             {
-                IdChat = idChat,
-                IdUsuarioEmisor = idEmisor,
-                IdUsuarioReceptor = idReceptor,
-                Contenido = contenido,
-                FechaEnvio = DateTime.Now
-            };
+                var mensaje = new Mensaje
+                {
+                    IdChat = idChat,
+                    IdUsuarioEmisor = idEmisor,
+                    IdUsuarioReceptor = idReceptor,
+                    Contenido = contenido,
+                    FechaEnvio = DateTime.Now
+                };
 
-            _context.Mensajes.Add(mensaje);
-            await _context.SaveChangesAsync();
+                _context.Mensajes.Add(mensaje);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GuardarMensaje)}, de la clase {nameof(MensajeService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         public async Task<EndpointResponse<List<GetMensajesVM>>> GetAllByIdChat(int idChat)
         {
-            if (idChat <= 0)
+            try
             {
+                if (idChat <= 0)
+                {
+                    return new EndpointResponse<List<GetMensajesVM>>
+                    {
+                        Message = "El id es requerido",
+                        Success = false,
+                        Data = new List<GetMensajesVM>()
+                    };
+                }
+
+                var chat = await _context.Chats.FirstOrDefaultAsync(x => x.Id == idChat && x.EsBorrado == false);
+                if (chat == null)
+                {
+                    return new EndpointResponse<List<GetMensajesVM>>
+                    {
+                        Message = "Chat no encontrado",
+                        Success = false,
+                        Data = new List<GetMensajesVM>()
+                    };
+                }
+
+                var claims = _httpContextAccessor.HttpContext?.User.Claims.ToList();
+                var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new EndpointResponse<List<GetMensajesVM>>
+                    {
+                        Message = "Usuario no autenticado",
+                        Success = false,
+                        Data = new List<GetMensajesVM>()
+                    };
+                }
+
+                if (chat.IdUsuario1 != userId && chat.IdUsuario2 != userId)
+                {
+                    return new EndpointResponse<List<GetMensajesVM>>
+                    {
+                        Message = "El usuario no tiene permisos para acceder a este chat.",
+                        Success = false,
+                        Data = new List<GetMensajesVM>()
+                    };
+                }
+
+                var result = await _context.Mensajes
+                    .Where(x => x.IdChat == idChat && x.EsBorrado == false)
+                    .OrderBy(m => m.FechaEnvio)
+                    .ToListAsync();
+
+                if (!result.Any())
+                {
+                    return new EndpointResponse<List<GetMensajesVM>>
+                    {
+                        Message = "No se encontraron mensajes con ese chat",
+                        Success = false,
+                        Data = new List<GetMensajesVM>()
+                    };
+                }
+
+                var mensajeDTOs = new List<GetMensajesVM>();
+
+                foreach (var mensaje in result)
+                {
+                    var personaEmisor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == mensaje.IdUsuarioEmisor);
+                    var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == mensaje.IdUsuarioReceptor);
+
+                    mensajeDTOs.Add(new GetMensajesVM
+                    {
+                        Id = mensaje.Id,
+                        IdChat = mensaje.IdChat,
+                        Contenido = mensaje.Contenido,
+                        IdUsuarioEmisor = mensaje.IdUsuarioEmisor,
+                        PersonaEmisor = personaEmisor,
+                        IdUsuarioReceptor = mensaje.IdUsuarioReceptor,
+                        PersonaReceptor = personaReceptor,
+                        FechaEnvio = mensaje.FechaEnvio,
+                    });
+                }
+
                 return new EndpointResponse<List<GetMensajesVM>>
                 {
-                    Message = "El id es requerido",
-                    Success = false,
-                    Data = new List<GetMensajesVM>()
+                    Message = "Mensajes obtenidos con éxito",
+                    Success = true,
+                    Data = mensajeDTOs
                 };
             }
-
-            var chat = await _context.Chats.FirstOrDefaultAsync(x => x.Id == idChat && x.EsBorrado == false);
-            if (chat == null)
+            catch (Exception ex)
             {
-                return new EndpointResponse<List<GetMensajesVM>>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = "Chat no encontrado",
-                    Success = false,
-                    Data = new List<GetMensajesVM>()
-                };
-            }
-
-            var claims = _httpContextAccessor.HttpContext?.User.Claims.ToList();
-            var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                return new EndpointResponse<List<GetMensajesVM>>
-                {
-                    Message = "Usuario no autenticado",
-                    Success = false,
-                    Data = new List<GetMensajesVM>()
-                };
-            }
-
-            if (chat.IdUsuario1 != userId && chat.IdUsuario2 != userId)
-            {
-                return new EndpointResponse<List<GetMensajesVM>>
-                {
-                    Message = "El usuario no tiene permisos para acceder a este chat.",
-                    Success = false,
-                    Data = new List<GetMensajesVM>()
-                };
-            }
-
-            var result = await _context.Mensajes
-                .Where(x => x.IdChat == idChat && x.EsBorrado == false)
-                .OrderBy(m => m.FechaEnvio)
-                .ToListAsync();
-
-            if (!result.Any())
-            {
-                return new EndpointResponse<List<GetMensajesVM>>
-                {
-                    Message = "No se encontraron mensajes con ese chat",
-                    Success = false,
-                    Data = new List<GetMensajesVM>()
-                };
-            }
-
-            var mensajeDTOs = new List<GetMensajesVM>();
-
-            foreach (var mensaje in result)
-            {
-                var personaEmisor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == mensaje.IdUsuarioEmisor);
-                var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == mensaje.IdUsuarioReceptor);
-
-                mensajeDTOs.Add(new GetMensajesVM
-                {
-                    Id = mensaje.Id,
-                    IdChat = mensaje.IdChat,
-                    Contenido = mensaje.Contenido,
-                    IdUsuarioEmisor = mensaje.IdUsuarioEmisor,
-                    PersonaEmisor = personaEmisor,
-                    IdUsuarioReceptor = mensaje.IdUsuarioReceptor,
-                    PersonaReceptor = personaReceptor,
-                    FechaEnvio = mensaje.FechaEnvio,
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdChat)}, de la clase {nameof(MensajeService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
                 });
+                throw;
             }
-
-            return new EndpointResponse<List<GetMensajesVM>>
-            {
-                Message = "Mensajes obtenidos con éxito",
-                Success = true,
-                Data = mensajeDTOs
-            };
         }
 
     }

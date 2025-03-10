@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Service.Services;
 using Service.Services.Contracts;
 using Service.Services.Implementation;
+using System.ComponentModel;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -18,22 +19,38 @@ namespace WebAPI.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly ILogService _logService;
 
-        public AccountController(IAccountService accountService)
+
+        public AccountController(IAccountService accountService, ILogService logService)
         {
             _accountService = accountService;
+            _logService = logService;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginVM loginVM)
         {
-            var result = await _accountService.LoginAsync(loginVM);
-            if (result.Success == true)
+            try
             {
-                return Ok(result);
-            }
+                var result = await _accountService.LoginAsync(loginVM);
+                if (result.Success == true)
+                {
+                    return Ok(result);
+                }
 
-            return Unauthorized(result);
+                return Unauthorized(result);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(Login)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         [HttpGet("GetAllAccounts")]
@@ -47,6 +64,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllAccounts)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -61,6 +84,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetById)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -75,6 +104,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(DeleteAccountAsync)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -89,6 +124,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CreateAccount)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -103,6 +144,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(UpdateAccountAsync)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -110,14 +157,27 @@ namespace WebAPI.Controllers
         [HttpPost("validateToken")]
         public async Task<IActionResult> ValidateJwtToken([FromBody] string token)
         {
-            var result = await _accountService.ValidateJwtToken(token);
-
-            if (result.Message == "Token Invalido")
+            try
             {
-                return Unauthorized(new { message = "User not found." });
-            }
+                var result = await _accountService.ValidateJwtToken(token);
 
-            return Ok(result);
+                if (result.Message == "Token Invalido")
+                {
+                    return Unauthorized(new { message = "User not found." });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ValidateJwtToken)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         [HttpGet("getAllRoles")]
@@ -131,6 +191,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ValidateJwtToken)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }

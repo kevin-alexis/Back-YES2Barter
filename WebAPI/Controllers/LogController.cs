@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using Domain.DTOs;
+using Domain.ViewModels.CloseChat;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service.Services.Contracts;
+using Service.Services.Implementation;
 
 namespace WebAPI.Controllers
 {
@@ -28,6 +30,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _service.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAll)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -38,11 +46,17 @@ namespace WebAPI.Controllers
         {
             try
             {
-                await _service.Add(logDTO);
+                await _service.AddAsync(logDTO);
                 return CreatedAtAction(nameof(GetById), new { id = logDTO.GetHashCode() }, logDTO);
             }
             catch (Exception ex)
             {
+                await _service.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(Add)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -62,6 +76,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _service.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetById)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
