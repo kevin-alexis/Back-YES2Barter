@@ -59,7 +59,7 @@ namespace Service.Services.Implementation
                 var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    var token = await GenerateJwtToken(user);
+                    var token = await GenerateJwtToken(user, loginVM.RememberMe);
                     return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, Success = true };
                 }
 
@@ -77,7 +77,7 @@ namespace Service.Services.Implementation
             }
         }
 
-        private async Task<string> GenerateJwtToken(ApplicationUser user)
+        private async Task<string> GenerateJwtToken(ApplicationUser user, bool rememberMe)
         {
             try
             {
@@ -88,6 +88,7 @@ namespace Service.Services.Implementation
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim("RememberMe", rememberMe.ToString()),
                 new Claim("uid", user.Id.ToString())
             };
 
@@ -97,11 +98,14 @@ namespace Service.Services.Implementation
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+                //Expiración del token con "Remember Me"
+                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120);
+
                 var token = new JwtSecurityToken(
                     issuer: _configuration["Jwt:Issuer"],
                     audience: _configuration["Jwt:Audience"],
                     claims: claims,
-                    expires: DateTime.Now.AddMinutes(3000),
+                    expires: tokenExpiration,
                     signingCredentials: creds);
 
                 return new JwtSecurityTokenHandler().WriteToken(token);
@@ -141,9 +145,11 @@ namespace Service.Services.Implementation
                     return new LoginResponseVM { Message = "Token Invalido" };
                 }
 
+                var rememberMe = principal.FindFirst("RememberMe")?.Value;
                 var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var user = await _userManager.FindByIdAsync(userId);
-                return new LoginResponseVM { Message = "Token Valido", Token = token, Success = true };
+
+                return new LoginResponseVM { Message = rememberMe == "True" ? "Token válido (Con rememberMe)" : "Token válido (Sin rememberMe)", Token = token, Success = true };
             }
             catch (Exception ex)
             {
