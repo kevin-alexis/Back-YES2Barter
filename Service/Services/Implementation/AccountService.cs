@@ -11,6 +11,7 @@ using Domain.ViewModels.Login;
 using Domain.ViewModels.Response;
 using Domain.ViewModels.UpdateAccountVM;
 using global::Service.Services.Contracts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,13 +29,15 @@ namespace Service.Services.Implementation
         private readonly DataBaseContext _context;
         private readonly string _connectionString;
         private readonly ILogService _logService;
+        private readonly IHttpContextAccessor _httpContextAccesor;
         public AccountService(
             Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
             Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, 
             SignInManager<ApplicationUser> signInManager, 
             IConfiguration configuration,
             DataBaseContext context,
-            ILogService logService
+            ILogService logService,
+            IHttpContextAccessor httpContextAccessor
             )
         {
             _userManager = userManager;
@@ -44,6 +47,7 @@ namespace Service.Services.Implementation
             _context = context;
             _connectionString = _context.Database.GetConnectionString();
             _logService = logService;
+            _httpContextAccesor = httpContextAccessor;
         }
 
         public async Task<LoginResponseVM> LoginAsync(LoginVM loginVM)
@@ -60,6 +64,15 @@ namespace Service.Services.Implementation
                 if (result.Succeeded)
                 {
                     var token = await GenerateJwtToken(user, loginVM.RememberMe);
+                    var cookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = false,
+                        SameSite = SameSiteMode.Strict,
+                        //SameSite = SameSiteMode.None,
+                        Expires = loginVM.RememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120)
+                    };  
+                    _httpContextAccesor.HttpContext.Response.Cookies.Append("token", token, cookieOptions);
                     return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, Success = true };
                 }
 
