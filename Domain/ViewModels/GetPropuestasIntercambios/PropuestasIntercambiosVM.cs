@@ -14,9 +14,13 @@ namespace Domain.ViewModels.GetPropuestasIntercambios
     {
         public int Id { get; set; }
         public string IdUsuarioOfertante { get; set; }
+        public Persona PersonaOfertante { get; set; }
         public string IdUsuarioReceptor { get; set; }
+        public Persona PersonaReceptor { get; set; }
         public int IdObjetoOfertado { get; set; }
+        public Objeto ObjetoOfertado { get; set; }
         public int IdObjetoSolicitado { get; set; }
+        public Objeto ObjetoSolicitado { get; set; }
         public DateTime FechaPropuesta { get; set; }
         public EstatusPropuestaIntercambio Estado { get; set; }
 

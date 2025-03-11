@@ -3,6 +3,7 @@ using Domain.Entities;
 using Domain.DTOs;
 using Domain.ViewModels.CreateObjeto;
 using Domain.ViewModels.CreatePropuestaIntercambio;
+using Domain.ViewModels.EditObjeto;
 
 namespace Service.Mappings
 {
@@ -20,6 +21,9 @@ namespace Service.Mappings
             CreateMap<Log, LogDTO>().ReverseMap();
 
             CreateMap<CreateObjetoVM, ObjetoDTO>()
+            .ForMember(dest => dest.RutaImagen, opt => opt.Ignore());
+
+            CreateMap<EditObjetoVM, ObjetoDTO>()
             .ForMember(dest => dest.RutaImagen, opt => opt.Ignore());
         }
     }

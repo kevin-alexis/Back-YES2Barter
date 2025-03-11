@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain.DTOs;
 using Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service.Services.Contracts;
 using Service.Services.Implementation;
@@ -16,6 +17,27 @@ namespace WebAPI.Controllers
         public PersonaController(IPersonaService service, IMapper mapper, ILogService logService) : base(service, mapper, logService)
         {
             _logService = logService;
+        }
+
+        [HttpGet("GetAllPersonasIntercambiadores/")]
+        [Authorize(Roles = "Administrador")]
+        virtual public async Task<ActionResult<IEnumerable<PersonaDTO>>> GetAllPersonasIntercambiadores()
+        {
+            try
+            {
+                var itemsDto = await _service.GetAllPersonasIntercambiadores();
+                return Ok(itemsDto);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdEf)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
         }
 
         [HttpGet("GetPersonaByIdEf/{id}")]
