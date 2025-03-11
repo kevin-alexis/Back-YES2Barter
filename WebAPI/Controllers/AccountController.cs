@@ -53,6 +53,39 @@ namespace WebAPI.Controllers
             }
         }
 
+        [HttpPost("refreshToken")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            Console.WriteLine($"refreshToken recibido: {refreshToken}");
+            Console.WriteLine($"Cookies recibidas: {string.Join(", ", Request.Cookies.Keys)}");
+
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return BadRequest(new { message = "No se proporcionó un refresh token válido" });
+            }
+
+            var result = await _accountService.RefreshAccessTokenAsync(refreshToken);
+
+            if (!result.Success)
+            {
+                return Unauthorized(new { message = result.Message });
+            }
+
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                //SameSite = SameSiteMode.None,
+                SameSite = SameSiteMode.Strict,
+                Domain = "localhost",
+                Path = "/",
+            });
+
+            return Ok(result);
+        }
+
         [HttpGet("GetAllAccounts")]
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> GetAllAccounts()

@@ -23,5 +23,8 @@ namespace Service.Services.Contracts
         Task<EndpointResponse<List<AccountVM>>> GetAllAccounts();
         Task<EndpointResponse<string>> UpdateAccountAsync(UpdateAccountVM updateAccountVM, int IdPersona);
         Task<EndpointResponse<AccountVM>> GetById(int idPersona);
+        Task<string> GenerateRefreshTokenAsync();
+        Task<LoginResponseVM> RefreshAccessTokenAsync(string refreshToken);
+        Task<bool> ValidateRefreshTokenAsync(string refreshToken);
     }
 }
