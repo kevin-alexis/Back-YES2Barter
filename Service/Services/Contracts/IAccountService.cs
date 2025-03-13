@@ -8,6 +8,7 @@ using Service.Services.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,5 +27,6 @@ namespace Service.Services.Contracts
         Task<string> GenerateRefreshTokenAsync();
         Task<LoginResponseVM> RefreshAccessTokenAsync(string refreshToken);
         Task<bool> ValidateRefreshTokenAsync(string refreshToken);
+        Task<EndpointResponse<AccountVM>> GetCurrentUser(string userId);
     }
 }

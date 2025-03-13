@@ -73,28 +73,28 @@ namespace Service.Services.Implementation
                     var cookieOptions = new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = false,
+                        Secure = true,
                         //SameSite = SameSiteMode.Lax,
                         //SameSite = SameSiteMode.None,
                         SameSite = SameSiteMode.Strict,
-                        Expires = loginVM.RememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(2),
+                        Expires = loginVM.RememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120),
                         Path = "/",
-                        Domain = "localhost"
+                        //Domain = "localhost"
                     };  
-                    _httpContextAccesor.HttpContext.Response.Cookies.Append("accessToken", token, cookieOptions);
+                    //_httpContextAccesor.HttpContext.Response.Cookies.Append("accessToken", token, cookieOptions);
 
                     var refreshTokenOptions = new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = false,
+                        Secure = true,
                         //SameSite = SameSiteMode.Lax,
                         //SameSite = SameSiteMode.None,
                         SameSite = SameSiteMode.Strict,
                         Expires = DateTime.Now.AddDays(7),
                         Path = "/",
-                        Domain = "localhost"
+                        //Domain = "localhost"
                     };
-                    _httpContextAccesor.HttpContext.Response.Cookies.Append("refreshToken", refreshToken, refreshTokenOptions);
+                    //_httpContextAccesor.HttpContext.Response.Cookies.Append("refreshToken", refreshToken, refreshTokenOptions);
                     return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, RefreshToken = refreshToken, Success = true };
                 }
 
@@ -134,7 +134,7 @@ namespace Service.Services.Implementation
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                 //Expiración del token con "Remember Me"
-                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(1);
+                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120);
 
                 var token = new JwtSecurityToken(
                     issuer: _configuration["Jwt:Issuer"],
@@ -260,13 +260,13 @@ namespace Service.Services.Implementation
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = false,
+                    Secure = true,
                     //SameSite = SameSiteMode.Lax,
                     //SameSite = SameSiteMode.None,
                     SameSite = SameSiteMode.Strict,
                     Expires = DateTime.Now.AddDays(7),
                     Path = "/",
-                    Domain = "localhost"
+                    //Domain = "localhost"
                 };
                 _httpContextAccesor.HttpContext?.Response.Cookies.Append("accessToken", newToken, cookieOptions);
                 _httpContextAccesor.HttpContext?.Response.Cookies.Append("refreshToken", newRefreshToken, cookieOptions);
@@ -682,5 +682,71 @@ namespace Service.Services.Implementation
             }
         }
 
+        public async Task<EndpointResponse<AccountVM>> GetCurrentUser(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "El ID del usuario es requerido",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var result = await _context.Personas
+                    .Include(x => x.Usuario)
+                    .FirstOrDefaultAsync(x => x.Usuario.Id == userId && x.EsBorrado == false);
+
+                if (result == null)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "No se encontró la cuenta del usuario autenticado",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var roles = await _userManager.GetRolesAsync(result.Usuario);
+                var userRole = roles.FirstOrDefault();
+                var roleId = string.Empty;
+
+                if (userRole != null)
+                {
+                    var role = await _roleManager.FindByNameAsync(userRole);
+                    roleId = role?.Id;
+                }
+
+                var accountVM = new AccountVM
+                {
+                    IdPersona = result.Id.ToString(),
+                    Nombre = result.Nombre,
+                    Email = result.Usuario.Email,
+                    IdUsuario = result.Usuario.Id.ToString(),
+                    Rol = userRole ?? "No Role",
+                    IdRol = roleId ?? "No Role Id"
+                };
+
+                return new EndpointResponse<AccountVM>
+                {
+                    Message = "Cuenta obtenida con éxito",
+                    Success = true,
+                    Data = accountVM
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetCurrentUser)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
     }
 }
