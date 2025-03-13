@@ -2,6 +2,7 @@
 using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.CreatePropuestaIntercambio;
+using Domain.ViewModels.EditPropuestaIntercambio;
 using Domain.ViewModels.GetPropuestasIntercambios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,14 +36,14 @@ namespace WebAPI.Controllers
         }
 
 
-        [HttpPost("AddPropuesta")]
+        [HttpPost("CreatePropuestaIntercambio")]
         [Authorize(Roles = "Administrador, Intercambiador")]
-        public async Task<ActionResult> AddPropuesta([FromBody] CreatePropuestaIntercambioVM createPropuestaIntercambioVM)
+        public async Task<IActionResult> AddPropuesta([FromBody] CreatePropuestaIntercambioVM createPropuestaIntercambioVM)
         {
             try
             {
-                await _service.AddPropuesta(createPropuestaIntercambioVM);
-                return CreatedAtAction(nameof(GetById), new { id = createPropuestaIntercambioVM.GetHashCode() }, createPropuestaIntercambioVM);
+                var result = await _service.AddPropuesta(createPropuestaIntercambioVM);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -50,6 +51,48 @@ namespace WebAPI.Controllers
                 {
                     Nivel = "Error",
                     Mensaje = $"Error en el método {nameof(AddPropuesta)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
+
+        [HttpPut("UpdatePropuestaIntercambio/{id}")]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> UpdatePropuesta([FromBody] EditPropuestaIntercambioVM editPropuestaIntercambioVM, int id)
+        {
+            try
+            {
+                var result = await _service.UpdatePropuesta(id, editPropuestaIntercambioVM);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(UpdatePropuesta)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
+
+        [HttpDelete("DeletePropuestaIntercambio/{id}")]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> DeletePropuesta(int id)
+        {
+            try
+            {
+                var result = await _service.DeletePropuesta(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(DeletePropuesta)}: {ex.Message}",
                     Excepcion = ex.ToString()
                 });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
@@ -80,6 +123,7 @@ namespace WebAPI.Controllers
 
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         override public async Task<ActionResult<PropuestaIntercambioDTO>> GetById(int id)
         {
             try
@@ -104,6 +148,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("GetAllByIdObjeto/{idObjeto}")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult<IEnumerable<PropuestaIntercambioDTO>>> GetAllByIdObjeto(int idObjeto)
         {
             try

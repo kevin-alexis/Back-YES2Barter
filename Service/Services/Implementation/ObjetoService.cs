@@ -334,7 +334,7 @@ namespace Service.Services.Implementation
             }
         }
 
-        public async Task ChangeStatus(int IdObjeto, EstatusObjeto estatus)
+        public async Task<EndpointResponse<string>> ChangeStatus(int IdObjeto, EstatusObjeto estatus)
         {
             try
             {
@@ -342,13 +342,14 @@ namespace Service.Services.Implementation
 
                 if (objeto == null)
                 {
-                    throw new HubException("No se pudo obtener el objeto.");
+                    return new EndpointResponse<string> { Message = "No se pudo obtener el objeto.", Success = false };
                 }
 
                 objeto.Estado = estatus;
 
                 _dbSet.Update(objeto);
                 await _context.SaveChangesAsync();
+                return new EndpointResponse<string> { Message = "Estatus cambiado con exito.", Success = true };
             }
             catch (Exception ex)
             {
