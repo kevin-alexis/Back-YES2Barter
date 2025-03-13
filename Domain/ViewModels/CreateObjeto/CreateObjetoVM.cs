@@ -20,6 +20,5 @@ namespace Domain.ViewModels.CreateObjeto
         public int IdCategoria { get; set; }
         public EstatusObjeto Estado { get; set; }
         public string IdUsuario { get; set; }
-
     }
 }

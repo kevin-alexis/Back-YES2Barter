@@ -2,6 +2,7 @@
 using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.CreateObjeto;
+using Domain.ViewModels.EditObjeto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -86,9 +87,9 @@ namespace WebAPI.Controllers
         [Authorize(Roles = "Administrador, Intercambiador")]
         public async Task<ActionResult> CreateObjeto([FromForm] CreateObjetoVM createObjetoVM)
         {
-            var ruta = _hostingEnvironment.ContentRootPath;
             try
             {
+                var ruta = _hostingEnvironment.ContentRootPath;
                 var rutaObjeto = await _service.GuardarObjetoImagen(createObjetoVM.IdCategoria, createObjetoVM.RutaImagen, ruta);
 
                 var ObjetoDTO = _mapper.Map<ObjetoDTO>(createObjetoVM);
@@ -111,17 +112,16 @@ namespace WebAPI.Controllers
 
         [HttpPut("update-objeto/{idObjeto}")]
         [Authorize(Roles = "Administrador, Intercambiador")]
-        public async Task<ActionResult> ActualizarObjeto([FromForm] CreateObjetoVM createObjetoVM, int idObjeto)
+        public async Task<ActionResult> ActualizarObjeto([FromForm] EditObjetoVM editObjetoVM, int idObjeto)
         {
-            var ruta = _hostingEnvironment.ContentRootPath;
-            var ObjetoDTO = _mapper.Map<ObjetoDTO>(createObjetoVM);
             try
             {
-                if (createObjetoVM.RutaImagen != null)
+                var ruta = _hostingEnvironment.ContentRootPath;
+                var ObjetoDTO = _mapper.Map<ObjetoDTO>(editObjetoVM);
+                if (editObjetoVM.RutaImagen != null)
                 {
                     bool objetoEliminado = await _service.EliminarObjetoImagen(idObjeto, ruta);
-                    var rutaImagen = await _service.GuardarObjetoImagen(createObjetoVM.IdCategoria, createObjetoVM.RutaImagen, ruta);
-
+                    var rutaImagen = await _service.GuardarObjetoImagen(editObjetoVM.IdCategoria, editObjetoVM.RutaImagen, ruta);
                     ObjetoDTO.RutaImagen = rutaImagen;
                     ObjetoDTO.Id = idObjeto;
 
@@ -130,7 +130,7 @@ namespace WebAPI.Controllers
 
                     if (objetoEliminado)
                     {
-                        rutaImagen = await _service.GuardarObjetoImagen(createObjetoVM.IdCategoria, createObjetoVM.RutaImagen, ruta);
+                        rutaImagen = await _service.GuardarObjetoImagen(editObjetoVM.IdCategoria, editObjetoVM.RutaImagen, ruta);
 
                         ObjetoDTO.RutaImagen = rutaImagen;
                         ObjetoDTO.Id = idObjeto;

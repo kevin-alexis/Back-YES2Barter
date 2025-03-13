@@ -41,7 +41,6 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Administrador")]
         public async Task<ActionResult> Add([FromBody] LogDTO logDTO)
         {
             try
