@@ -11,6 +11,7 @@ using Domain.ViewModels.Login;
 using Domain.ViewModels.Response;
 using Domain.ViewModels.UpdateAccountVM;
 using global::Service.Services.Contracts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,13 +29,15 @@ namespace Service.Services.Implementation
         private readonly DataBaseContext _context;
         private readonly string _connectionString;
         private readonly ILogService _logService;
+        private readonly IHttpContextAccessor _httpContextAccesor;
         public AccountService(
             Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
             Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, 
             SignInManager<ApplicationUser> signInManager, 
             IConfiguration configuration,
             DataBaseContext context,
-            ILogService logService
+            ILogService logService,
+            IHttpContextAccessor httpContextAccessor
             )
         {
             _userManager = userManager;
@@ -44,6 +47,7 @@ namespace Service.Services.Implementation
             _context = context;
             _connectionString = _context.Database.GetConnectionString();
             _logService = logService;
+            _httpContextAccesor = httpContextAccessor;
         }
 
         public async Task<LoginResponseVM> LoginAsync(LoginVM loginVM)
@@ -59,7 +63,16 @@ namespace Service.Services.Implementation
                 var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
-                    var token = await GenerateJwtToken(user);
+                    var token = await GenerateJwtToken(user, loginVM.RememberMe);
+                    var cookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = false,
+                        SameSite = SameSiteMode.Strict,
+                        //SameSite = SameSiteMode.None,
+                        Expires = loginVM.RememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120)
+                    };  
+                    _httpContextAccesor.HttpContext.Response.Cookies.Append("token", token, cookieOptions);
                     return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, Success = true };
                 }
 
@@ -77,7 +90,7 @@ namespace Service.Services.Implementation
             }
         }
 
-        private async Task<string> GenerateJwtToken(ApplicationUser user)
+        private async Task<string> GenerateJwtToken(ApplicationUser user, bool rememberMe)
         {
             try
             {
@@ -88,6 +101,7 @@ namespace Service.Services.Implementation
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim("RememberMe", rememberMe.ToString()),
                 new Claim("uid", user.Id.ToString())
             };
 
@@ -97,11 +111,14 @@ namespace Service.Services.Implementation
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+                //Expiración del token con "Remember Me"
+                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120);
+
                 var token = new JwtSecurityToken(
                     issuer: _configuration["Jwt:Issuer"],
                     audience: _configuration["Jwt:Audience"],
                     claims: claims,
-                    expires: DateTime.Now.AddMinutes(3000),
+                    expires: tokenExpiration,
                     signingCredentials: creds);
 
                 return new JwtSecurityTokenHandler().WriteToken(token);
@@ -141,9 +158,11 @@ namespace Service.Services.Implementation
                     return new LoginResponseVM { Message = "Token Invalido" };
                 }
 
+                var rememberMe = principal.FindFirst("RememberMe")?.Value;
                 var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var user = await _userManager.FindByIdAsync(userId);
-                return new LoginResponseVM { Message = "Token Valido", Token = token, Success = true };
+
+                return new LoginResponseVM { Message = rememberMe == "True" ? "Token válido (Con rememberMe)" : "Token válido (Sin rememberMe)", Token = token, Success = true };
             }
             catch (Exception ex)
             {

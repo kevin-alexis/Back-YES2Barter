@@ -23,6 +23,30 @@ namespace Service.Services.Implementation
             _logService = logService;
         }
 
+        public async Task<IEnumerable<PersonaDTO>> GetAllPersonasIntercambiadores()
+        {
+            try
+            {
+                var items = await _context.Personas.Where(
+                    x => _context.UserRoles
+                        .Any(ur => ur.UserId == x.Usuario.Id && ur.RoleId == _context.Roles
+                            .Where(r => r.NormalizedName == "INTERCAMBIADOR")
+                            .Select(r => r.Id)
+                            .FirstOrDefault()
+                            ) && x.EsBorrado == false).ToListAsync();
+                return _mapper.Map<IEnumerable<PersonaDTO>>(items);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdEf)}, de la clase {nameof(PersonaService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                }); throw new Exception("Error al obtener todos los elementos", ex);
+            }
+        }
+
         // Obtener Persona por Id usando Entity Framework
         public async Task<PersonaDTO> GetPersonaByIdEf(int id)
         {
