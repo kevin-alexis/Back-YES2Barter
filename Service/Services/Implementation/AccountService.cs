@@ -268,8 +268,8 @@ namespace Service.Services.Implementation
                     Path = "/",
                     //Domain = "localhost"
                 };
-                _httpContextAccesor.HttpContext?.Response.Cookies.Append("accessToken", newToken, cookieOptions);
-                _httpContextAccesor.HttpContext?.Response.Cookies.Append("refreshToken", newRefreshToken, cookieOptions);
+                _httpContextAccesor.HttpContext?.Response.Cookies.Append("access_token", newToken, cookieOptions);
+                _httpContextAccesor.HttpContext?.Response.Cookies.Append("refresh_token", newRefreshToken, cookieOptions);
 
                 return new LoginResponseVM
                 {

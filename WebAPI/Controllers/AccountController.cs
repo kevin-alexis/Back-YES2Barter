@@ -8,6 +8,7 @@ using Domain.ViewModels.UpdateAccountVM;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using Service.Services;
 using Service.Services.Contracts;
 using Service.Services.Implementation;
@@ -76,7 +77,7 @@ namespace WebAPI.Controllers
 
         [HttpPost("logout")]
         public IActionResult Logout()
-        {
+            {
             // Asegurar la eliminación de las cookies con opciones adecuadas
             var cookieOptions = new CookieOptions
             {
@@ -87,8 +88,8 @@ namespace WebAPI.Controllers
                 Expires = DateTime.UtcNow.AddDays(-1) // Forzar expiración
             };
 
-            Response.Cookies.Append("accessToken", "", cookieOptions);
-            Response.Cookies.Append("refreshToken", "", cookieOptions);
+            Response.Cookies.Append("access_token", "", cookieOptions);
+            Response.Cookies.Append("refresh_token", "", cookieOptions);
 
             return Ok(new { message = "Sesión cerrada exitosamente." });
         }
@@ -115,6 +116,7 @@ namespace WebAPI.Controllers
                 return Unauthorized(new { message = result.Message });
             }
             Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
             Response.Cookies.Append("access_token", result.Token, new CookieOptions
             {
                 HttpOnly = true,
@@ -123,7 +125,6 @@ namespace WebAPI.Controllers
                 Expires = DateTime.UtcNow.AddMinutes(120),
                 Path = "/"
             });
-            Response.Cookies.Delete("refresh_token");
             Response.Cookies.Append("refresh_token", result.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
