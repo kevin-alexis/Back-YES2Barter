@@ -39,7 +39,7 @@ namespace WebAPI.Controllers
                 var result = await _accountService.LoginAsync(loginVM);
                 if (result.Success == true)
                 {
-                    Response.Cookies.Append("accessToken", result.Token, new CookieOptions
+                    Response.Cookies.Append("access_token", result.Token, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
@@ -48,7 +48,7 @@ namespace WebAPI.Controllers
                         Path = "/"
                     });
 
-                    Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+                    Response.Cookies.Append("refresh_token", result.RefreshToken, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
@@ -98,7 +98,7 @@ namespace WebAPI.Controllers
         [HttpPost("refreshToken")]
         public async Task<IActionResult> RefreshToken()
         {
-            var refreshToken = Request.Cookies["refreshToken"];
+            var refreshToken = Request.Cookies["refresh_token"];
 
             //Console.WriteLine($"refreshToken recibido: {refreshToken}");
             //Console.WriteLine($"Cookies recibidas: {string.Join(", ", Request.Cookies.Keys)}");
@@ -114,26 +114,22 @@ namespace WebAPI.Controllers
             {
                 return Unauthorized(new { message = result.Message });
             }
-
-            Response.Cookies.Append("accessToken", result.Token, new CookieOptions
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Append("access_token", result.Token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                //SameSite = SameSiteMode.Lax,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddMinutes(120),
                 Path = "/"
             });
-            //Response.Cookies.Delete("refreshToken");
-            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            Response.Cookies.Delete("refresh_token");
+            Response.Cookies.Append("refresh_token", result.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                //SameSite = SameSiteMode.None,
                 SameSite = SameSiteMode.Strict,
-                //SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(7),
-                //Domain = "localhost",
                 Path = "/",
             });
 

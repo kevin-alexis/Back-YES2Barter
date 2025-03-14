@@ -134,7 +134,7 @@ namespace Service.Services.Implementation
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                 //Expiración del token con "Remember Me"
-                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120);
+                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(6) : DateTime.Now.AddMinutes(120);
 
                 var token = new JwtSecurityToken(
                     issuer: _configuration["Jwt:Issuer"],
