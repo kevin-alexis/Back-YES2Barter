@@ -47,6 +47,29 @@ namespace Service.Services.Implementation
             }
         }
 
+        public async Task<PersonaDTO> GetPersonaByIdUsuario(string idUsuario)
+        {
+            try
+            {
+                var item = await _dbSet.Where(e => e.IdUsuario == idUsuario && !e.EsBorrado).FirstOrDefaultAsync();
+                if (item != null)
+                {
+                    return _mapper.Map<PersonaDTO>(item);
+                }
+                return default(PersonaDTO);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdUsuario)}, de la clase {nameof(PersonaService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw new Exception($"Error al obtener el elemento con idUsuario {idUsuario}", ex);
+            }
+        }
+
         // Obtener Persona por Id usando Entity Framework
         public async Task<PersonaDTO> GetPersonaByIdEf(int id)
         {

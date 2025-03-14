@@ -50,7 +50,7 @@ namespace Service.Services.Implementation
                 }
 
                 var result = await _context.Objetos
-                    .Where(x => x.Nombre.StartsWith(name) && x.EsBorrado == false && x.Estado == EstatusObjeto.DISPONIBLE)
+                    .Where(x => x.Nombre.Contains(name) && x.EsBorrado == false && x.Estado == EstatusObjeto.DISPONIBLE)
                     .ToListAsync();
 
                 if (!result.Any())

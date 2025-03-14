@@ -392,45 +392,62 @@ namespace Service.Services.Implementation
         }
 
 
-        public async Task<EndpointResponse<List<PropuestaIntercambioDTO>>> GetAllByIdObjeto(int idObjeto)
+        public async Task<EndpointResponse<List<PropuestasIntercambiosVM>>> GetAllByIdObjeto(int idObjeto)
         {
             try
             {
                 if (idObjeto <= 0)
                 {
-                    return new EndpointResponse<List<PropuestaIntercambioDTO>>
+                    return new EndpointResponse<List<PropuestasIntercambiosVM>>
                     {
                         Message = "El id es requerido",
                         Success = false,
-                        Data = new List<PropuestaIntercambioDTO>()
+                        Data = new List<PropuestasIntercambiosVM>()
                     };
                 }
 
                 var result = await _context.PropuestasIntercambios
-                    .Where(x => x.EsBorrado == false)
+                    .Where(x => x.EsBorrado == false && (x.IdObjetoOfertado == idObjeto || x.IdObjetoSolicitado == idObjeto))
                     .ToListAsync();
 
                 if (!result.Any())
                 {
-                    return new EndpointResponse<List<PropuestaIntercambioDTO>>
+                    return new EndpointResponse<List<PropuestasIntercambiosVM>>
                     {
                         Message = "No se encontraron propuestas de intercambios con ese objeto",
                         Success = false,
-                        Data = new List<PropuestaIntercambioDTO>()
+                        Data = new List<PropuestasIntercambiosVM>()
                     };
                 }
 
-                var propuestaIntercambioDTOs = result.Select(propuestaIntercambio => new PropuestaIntercambioDTO
+                var propuestaIntercambioDTOs = await Task.WhenAll(result.Select(async propuestaIntercambio =>
                 {
-                    Id = propuestaIntercambio.Id,
-                    EsBorrado = propuestaIntercambio.EsBorrado
-                }).ToList();
+                    var personaOfertante = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestaIntercambio.IdUsuarioOfertante);
+                    var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestaIntercambio.IdUsuarioReceptor);
+                    var objetoOfertado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestaIntercambio.IdObjetoOfertado);
+                    var objetoSolicitado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestaIntercambio.IdObjetoSolicitado);
 
-                return new EndpointResponse<List<PropuestaIntercambioDTO>>
+                    return new PropuestasIntercambiosVM
+                    {
+                        Id = propuestaIntercambio.Id,
+                        IdUsuarioOfertante = propuestaIntercambio.IdUsuarioOfertante,
+                        PersonaOfertante = personaOfertante,
+                        IdUsuarioReceptor = propuestaIntercambio.IdUsuarioReceptor,
+                        PersonaReceptor = personaReceptor,
+                        IdObjetoOfertado = propuestaIntercambio.IdObjetoOfertado,
+                        ObjetoOfertado = objetoOfertado,
+                        IdObjetoSolicitado = propuestaIntercambio.IdObjetoSolicitado,
+                        ObjetoSolicitado = objetoSolicitado,
+                        FechaPropuesta = propuestaIntercambio.FechaPropuesta,
+                        Estado = propuestaIntercambio.Estado
+                    };
+                }));
+
+                return new EndpointResponse<List<PropuestasIntercambiosVM>>
                 {
                     Message = "Propuestas de intercambios obtenidas con éxito",
                     Success = true,
-                    Data = propuestaIntercambioDTOs
+                    Data = propuestaIntercambioDTOs.ToList()
                 };
             }
             catch (Exception ex)
