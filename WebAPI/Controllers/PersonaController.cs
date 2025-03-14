@@ -40,6 +40,30 @@ namespace WebAPI.Controllers
             }
         }
 
+        [HttpGet("GetPersonaByIdUsuario/{idUsuario}")]
+        public async Task<ActionResult<PersonaDTO>> GetPersonaByIdUsuario(string idUsuario)
+        {
+            try
+            {
+                var result = await _service.GetPersonaByIdUsuario(idUsuario);
+                if (result == null)
+                {
+                    return NotFound();
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdUsuario)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
         [HttpGet("GetPersonaByIdEf/{id}")]
         public async Task<ActionResult<PersonaDTO>> GetPersonaByIdEf(int id)
         {

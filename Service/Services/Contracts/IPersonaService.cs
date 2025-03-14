@@ -9,5 +9,6 @@ namespace Service.Services.Contracts
         Task<IEnumerable<PersonaDTO>> GetAllPersonasIntercambiadores();
         Task<PersonaDTO> GetPersonaByIdDapper(int id);
         Task<PersonaDTO> GetPersonaByIdEf(int id);
+        Task<PersonaDTO> GetPersonaByIdUsuario(string idUsuario);
     }
 }

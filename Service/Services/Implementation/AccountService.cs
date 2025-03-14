@@ -212,6 +212,8 @@ namespace Service.Services.Implementation
                 {
                     Nombre = createAccountVM.Nombre,
                     IdUsuario = result.Data,
+                    RutaFotoPerfil = "Uploads\\FotoPerfil\\FotoPerfilDefecto.png",
+                    Biografia = "",
                     EsBorrado = false
                 };
 
