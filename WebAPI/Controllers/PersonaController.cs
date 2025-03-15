@@ -20,7 +20,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpGet("GetAllPersonasIntercambiadores/")]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
         virtual public async Task<ActionResult<IEnumerable<PersonaDTO>>> GetAllPersonasIntercambiadores()
         {
             try
