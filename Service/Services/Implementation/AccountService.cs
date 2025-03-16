@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Repository.Context;
+using Repository.Migrations;
 
 namespace Service.Services.Implementation
 {
@@ -51,6 +52,34 @@ namespace Service.Services.Implementation
             _httpContextAccesor = httpContextAccessor;
         }
 
+        public async Task<LoginResponseVM> LogOut(string refreshToken)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+
+                if (user != null)
+                {
+                    user.RefreshToken = null;
+                    await _context.SaveChangesAsync();
+                }
+
+                    return new LoginResponseVM { Message = "Cierre de sesión exitoso", Success = true };
+                
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(LogOut)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
+
         public async Task<LoginResponseVM> LoginAsync(LoginVM loginVM)
         {
             try
@@ -58,7 +87,7 @@ namespace Service.Services.Implementation
                 var user = await _userManager.FindByEmailAsync(loginVM.Email);
                 if (user == null)
                 {
-                    return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
+                    return new LoginResponseVM { Message = "Usuario o contraseña incorrectos", Success = false };
                 }
 
                 var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: false);
@@ -98,7 +127,7 @@ namespace Service.Services.Implementation
                     return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, RefreshToken = refreshToken, Success = true };
                 }
 
-                return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
+                return new LoginResponseVM { Message = "Usuario o contraseña incorrectos", Success = false };
             }
             catch (Exception ex)
             {

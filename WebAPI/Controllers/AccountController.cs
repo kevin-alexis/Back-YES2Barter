@@ -61,7 +61,7 @@ namespace WebAPI.Controllers
                     return Ok(result);
                 }
 
-                return Unauthorized(result);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -76,8 +76,16 @@ namespace WebAPI.Controllers
         }
 
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
             {
+            var refreshToken = Request.Cookies["refresh_token"];
+
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                await _accountService.LogOut(refreshToken);
+                
+            }
+
             // Asegurar la eliminación de las cookies con opciones adecuadas
             var cookieOptions = new CookieOptions
             {
@@ -293,14 +301,14 @@ namespace WebAPI.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Unauthorized(new { success = false, message = "No se encontró el ID del usuario en los claims" });
+                return Ok(new { success = false, message = "No se encontró el ID del usuario en los claims" });
             }
 
             var response = await _accountService.GetCurrentUser(userId);
 
             if (!response.Success)
             {
-                return Unauthorized(response);
+                return Ok(response);
             }
 
             return Ok(response);
