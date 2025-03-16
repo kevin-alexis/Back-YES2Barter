@@ -23,7 +23,7 @@ namespace Repository.Seeders.SeedersServices.SeedersImplementation
         {
             if (!_context.Objetos.Any())
             {
-                var persona = _context.Personas.FirstOrDefault(); 
+                var persona = _context.Personas.FirstOrDefault(x => x.Id == 2); 
                 if (persona == null) throw new Exception("No se encontró un usuario para asignar.");
 
                 var objetos = new List<Objeto>

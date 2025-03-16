@@ -6,6 +6,7 @@ using Domain.ViewModels.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Repository.Context;
 using Service.Logging;
 using Service.Services.Contracts;
@@ -33,6 +34,54 @@ namespace Service.Services.Implementation
             _userManager = userManager;
             _logService = logService;
 
+        }
+
+        public async Task<EndpointResponse<List<ObjetoDTO>>> GetAllByIdEstatus(EstatusObjeto? estatus)
+        {
+            try
+            {
+                var result = await _context.Objetos
+                    .Where(x => (!estatus.HasValue || x.Estado == estatus.Value) && x.EsBorrado == false)
+                    .ToListAsync();
+
+                if (!result.Any())
+                {
+                    return new EndpointResponse<List<ObjetoDTO>>
+                    {
+                        Message = "No se encontraron objetos con ese estatus",
+                        Success = false,
+                        Data = new List<ObjetoDTO>()
+                    };
+                }
+
+                var objetoDTOs = result.Select(objeto => new ObjetoDTO
+                {
+                    Id = objeto.Id,
+                    Nombre = objeto.Nombre,
+                    Descripcion = objeto.Descripcion,
+                    EsBorrado = objeto.EsBorrado,
+                    FechaPublicacion = objeto.FechaPublicacion,
+                    Estado = objeto.Estado,
+                    RutaImagen = objeto.RutaImagen
+                }).ToList();
+
+                return new EndpointResponse<List<ObjetoDTO>>
+                {
+                    Message = "Objetos obtenidos con éxito",
+                    Success = true,
+                    Data = objetoDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetByName)}, de la clase {nameof(ObjetoService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         public async Task<EndpointResponse<List<ObjetoDTO>>> GetByName(string name)
@@ -212,7 +261,7 @@ namespace Service.Services.Implementation
         {
             try
             {
-                var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
                 string extension = Path.GetExtension(objetoImagen.FileName).ToLower();
                 if (!validExtensions.Contains(extension))
                 {

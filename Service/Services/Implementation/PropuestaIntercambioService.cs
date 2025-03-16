@@ -135,7 +135,8 @@ namespace Service.Services.Implementation
                     await _objetoService.ChangeStatus(item.IdObjetoSolicitado, EstatusObjeto.DISPONIBLE);
                     if (chat != null)
                     {
-                        _context.Chats.Remove(chat);
+                        chat.EsBorrado = true;
+                        _context.Chats.Update(chat);
                     }
                 }
                 else if (item.Estado == EstatusPropuestaIntercambio.CONCRETADA)
@@ -145,7 +146,8 @@ namespace Service.Services.Implementation
 
                     if (chat != null)
                     {
-                        _context.Chats.Remove(chat);
+                        chat.EsBorrado = true;
+                        _context.Chats.Update(chat);
                     }
                 }
 
@@ -252,7 +254,8 @@ namespace Service.Services.Implementation
                     await _objetoService.ChangeStatus(propuestaIntercambio.IdObjetoSolicitado, EstatusObjeto.DISPONIBLE);
                     if (chat != null)
                     {
-                        _context.Chats.Remove(chat);
+                        chat.EsBorrado = true;
+                        _context.Chats.Update(chat);
                     }
                 }
                 else if (propuestaIntercambio.Estado == EstatusPropuestaIntercambio.CONCRETADA)
@@ -262,7 +265,8 @@ namespace Service.Services.Implementation
 
                     if (chat != null)
                     {
-                        _context.Chats.Remove(chat);
+                        chat.EsBorrado = true;
+                        _context.Chats.Update(chat);
                     }
                 }
 
@@ -306,11 +310,12 @@ namespace Service.Services.Implementation
                     var chat = await _context.Chats.FirstOrDefaultAsync(x => x.IdPropuestaIntercambio == propuestaIntercambio.Id && !x.EsBorrado);
                     if (chat != null)
                     {
-                        _context.Chats.Remove(chat);
+                        chat.EsBorrado = true;
+                        _context.Chats.Update(chat);
                     }
                 }
-                
-                _context.Remove(propuestaIntercambio);
+                propuestaIntercambio.EsBorrado = true;
+                _context.Update(propuestaIntercambio);
                 await _context.SaveChangesAsync();
 
                 return new EndpointResponse<string> { Message = "Propuesta Eliminada con Exito.", Success = true };
@@ -328,6 +333,72 @@ namespace Service.Services.Implementation
             }
 
         }
+
+        public async Task<EndpointResponse<List<PropuestasIntercambiosVM>>> GetAllByIdUsuarioAndIdObjeto(string idUsuario, int idObjeto)
+        {
+            try
+            {
+                List<PropuestaIntercambio> result = await _context.PropuestasIntercambios
+                    .Where(x => x.IdUsuarioOfertante == idUsuario && x.IdObjetoSolicitado == idObjeto && !x.EsBorrado)
+                    .ToListAsync(); 
+
+                if (!result.Any())
+                {
+                    return new EndpointResponse<List<PropuestasIntercambiosVM>>
+                    {
+                        Message = "Este usuario aún no ha hecho una propuesta.",
+                        Success = false,
+                        Data = null
+                    };
+                }
+
+                var propuestaIntercambioDTOs = new List<PropuestasIntercambiosVM>();
+
+                foreach (var propuestaIntercambio in result)
+                {
+                    var personaOfertante = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestaIntercambio.IdUsuarioOfertante);
+                    var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestaIntercambio.IdUsuarioReceptor);
+                    var objetoOfertado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestaIntercambio.IdObjetoOfertado);
+                    var objetoSolicitado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestaIntercambio.IdObjetoSolicitado);
+
+                    propuestaIntercambioDTOs.Add(new PropuestasIntercambiosVM
+                    {
+                        Id = propuestaIntercambio.Id,
+                        IdUsuarioOfertante = propuestaIntercambio.IdUsuarioOfertante,
+                        PersonaOfertante = personaOfertante,
+                        IdUsuarioReceptor = propuestaIntercambio.IdUsuarioReceptor,
+                        PersonaReceptor = personaReceptor,
+                        IdObjetoOfertado = propuestaIntercambio.IdObjetoOfertado,
+                        ObjetoOfertado = objetoOfertado,
+                        IdObjetoSolicitado = propuestaIntercambio.IdObjetoSolicitado,
+                        ObjetoSolicitado = objetoSolicitado,
+                        FechaPropuesta = propuestaIntercambio.FechaPropuesta,
+                        Estado = propuestaIntercambio.Estado
+                    });
+                }
+
+
+                return new EndpointResponse<List<PropuestasIntercambiosVM>>
+                {
+                    Message = "Este usuario ya hizo una propuesta.",
+                    Success = true,
+                    Data = propuestaIntercambioDTOs
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdUsuarioAndIdObjeto)}, de la clase {nameof(PropuestaIntercambioService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+
+                throw new Exception("Error al obtener las propuestas", ex);
+            }
+        }
+
+
 
         public async Task<EndpointResponse<List<PropuestasIntercambiosVM>>> GetAllPropuestas()
         {
@@ -407,7 +478,7 @@ namespace Service.Services.Implementation
                 }
 
                 var result = await _context.PropuestasIntercambios
-                    .Where(x => x.EsBorrado == false && (x.IdObjetoOfertado == idObjeto || x.IdObjetoSolicitado == idObjeto))
+                    .Where(x => x.EsBorrado == false && (x.IdObjetoOfertado == idObjeto || x.IdObjetoSolicitado == idObjeto) && x.Estado == EstatusPropuestaIntercambio.ENVIADA)
                     .ToListAsync();
 
                 if (!result.Any())

@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.ViewModels.GetPropuestasIntercambios;
 
 namespace Domain.ViewModels.GetChats
 {
@@ -10,7 +11,7 @@ namespace Domain.ViewModels.GetChats
         public string IdUsuario2 { get; set; }
         public Persona PersonaReceptor { get; set; }
         public int IdPropuestaIntercambio { get; set; }
-        public PropuestaIntercambio PropuestaIntercambio { get; set; }
+        public PropuestasIntercambiosVM PropuestaIntercambio { get; set; }
 
     }
 }

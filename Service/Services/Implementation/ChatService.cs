@@ -2,6 +2,7 @@
 using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.GetChats;
+using Domain.ViewModels.GetPropuestasIntercambios;
 using Domain.ViewModels.Response;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -71,6 +72,10 @@ namespace Service.Services.Implementation
                     var personaEmisor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario1);
                     var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario2);
                     var propuestasIntercambios = await _context.PropuestasIntercambios.FirstOrDefaultAsync(p => p.Id == chat.IdPropuestaIntercambio);
+                    var personaOfertante = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestasIntercambios.IdUsuarioOfertante);
+                    var personaReceptorPropuesta = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestasIntercambios.IdUsuarioReceptor);
+                    var objetoOfertado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestasIntercambios.IdObjetoOfertado);
+                    var objetoSolicitado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestasIntercambios.IdObjetoSolicitado);
 
                     chatDTOs.Add(new GetChatsVM
                     {
@@ -80,7 +85,20 @@ namespace Service.Services.Implementation
                         IdUsuario2 = chat.IdUsuario2,
                         PersonaReceptor = personaReceptor,
                         IdPropuestaIntercambio = chat.IdPropuestaIntercambio,
-                        PropuestaIntercambio = propuestasIntercambios
+                        PropuestaIntercambio = new PropuestasIntercambiosVM
+                        {
+                            Id = propuestasIntercambios.Id,
+                            IdUsuarioOfertante = propuestasIntercambios.IdUsuarioOfertante,
+                            PersonaOfertante = personaEmisor,
+                            IdUsuarioReceptor = propuestasIntercambios.IdUsuarioReceptor,
+                            PersonaReceptor = personaReceptorPropuesta,
+                            IdObjetoOfertado = propuestasIntercambios.IdObjetoOfertado,
+                            ObjetoOfertado = objetoOfertado,
+                            IdObjetoSolicitado = propuestasIntercambios.IdObjetoSolicitado,
+                            ObjetoSolicitado = objetoSolicitado,
+                            FechaPropuesta = propuestasIntercambios.FechaPropuesta,
+                            Estado = propuestasIntercambios.Estado,
+                        }
                     });
                 }
 
@@ -117,6 +135,45 @@ namespace Service.Services.Implementation
                 var estatus = isSuccess ? EstatusPropuestaIntercambio.CONCRETADA : EstatusPropuestaIntercambio.NO_CONCRETADA;
                 // mando a hacer el cambio de estatus de la propuesta y objetos
                 await _propuestaIntercambioService.ChangeStatus(idPropuestaIntercambio, estatus);
+
+                if (isSuccess)
+                {
+                    var propuesta = await _context.PropuestasIntercambios.FirstOrDefaultAsync(p => p.Id == idPropuestaIntercambio);
+
+                    if (propuesta == null)
+                        return;
+
+                    var propuestas = await _context.PropuestasIntercambios
+                        .Where(p =>
+                            p.IdObjetoSolicitado == propuesta.IdObjetoSolicitado ||
+                            p.IdObjetoSolicitado == propuesta.IdObjetoOfertado ||
+                            p.IdObjetoOfertado == propuesta.IdObjetoSolicitado ||
+                            p.IdObjetoOfertado == propuesta.IdObjetoOfertado)
+                        .ToListAsync();
+
+                    List<Chat> chats = new List<Chat>();
+
+                    foreach (var prop in propuestas)
+                    {
+                        Chat chatData = await _context.Chats.FirstOrDefaultAsync(c => c.IdPropuestaIntercambio == prop.Id);
+                        if (chatData != null)
+                        {
+                            chats.Add(chatData);
+                        }
+                        prop.Estado = EstatusPropuestaIntercambio.RECHAZADA;
+                        prop.EsBorrado = true;
+                        _context.PropuestasIntercambios.Update(prop);
+                    }
+
+                    foreach (var chatItem in chats)
+                    {
+                        chatItem.EsBorrado = true;
+                        _context.Update(chatItem);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
 
                 chat.EsBorrado = true;
                 _dbSet.Update(chat);

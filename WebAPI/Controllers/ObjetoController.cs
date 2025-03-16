@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Services.Contracts;
 using Service.Services.Implementation;
+using System.Security.Claims;
+using static Domain.Enumerations.Enums;
 
 namespace WebAPI.Controllers
 {
@@ -20,17 +22,29 @@ namespace WebAPI.Controllers
         private readonly DataBaseContext _dbContext;
         private readonly IPropuestaIntercambioService _propuestaIntercambioService;
         private readonly ILogService _logService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
         public ObjetoController(IObjetoService service, 
             IPropuestaIntercambioService propuestaIntercambioService, 
             IMapper mapper, IWebHostEnvironment hostingEnvironment, 
             DataBaseContext dbContext,
+            IHttpContextAccessor httpContextAccessor,
              ILogService logService) : base(service, mapper, logService)
         {
             _hostingEnvironment = hostingEnvironment;
             _dbContext = dbContext;
             _propuestaIntercambioService = propuestaIntercambioService;
             _logService = logService;
+            _httpContextAccessor = httpContextAccessor;
 
+        }
+
+        [HttpPost("GetAllByIdEstatus")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        public async Task<IActionResult> GetAllByIdEstatus([FromBody] EstatusObjeto? estatus)
+        {
+            var result = await _service.GetAllByIdEstatus(estatus);
+            return Ok(result);
         }
 
         [HttpPost("GetByName")]
@@ -89,6 +103,17 @@ namespace WebAPI.Controllers
         {
             try
             {
+                var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
+                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
+                
+                createObjetoVM.FechaPublicacion = DateTime.Now;
+
+                if (userRole == "Intercambiador" && userId != null)
+                {
+                    createObjetoVM.Estado = EstatusObjeto.DISPONIBLE;
+                    createObjetoVM.IdUsuario = userId;
+                }
+
                 var ruta = _hostingEnvironment.ContentRootPath;
                 var rutaObjeto = await _service.GuardarObjetoImagen(createObjetoVM.IdCategoria, createObjetoVM.RutaImagen, ruta);
 
@@ -118,34 +143,23 @@ namespace WebAPI.Controllers
             {
                 var ruta = _hostingEnvironment.ContentRootPath;
                 var ObjetoDTO = _mapper.Map<ObjetoDTO>(editObjetoVM);
+                var objeto = await _dbContext.Objetos.FirstOrDefaultAsync(o => o.Id == idObjeto);
+                ObjetoDTO.FechaPublicacion = objeto.FechaPublicacion;
+
+                var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
+                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;              
+
                 if (editObjetoVM.RutaImagen != null)
                 {
                     bool objetoEliminado = await _service.EliminarObjetoImagen(idObjeto, ruta);
                     var rutaImagen = await _service.GuardarObjetoImagen(editObjetoVM.IdCategoria, editObjetoVM.RutaImagen, ruta);
                     ObjetoDTO.RutaImagen = rutaImagen;
                     ObjetoDTO.Id = idObjeto;
-
                     await _service.Update(ObjetoDTO);
                     return Ok(new { success = true, message = "Objeto actualizado exitosamente" });
-
-                    if (objetoEliminado)
-                    {
-                        rutaImagen = await _service.GuardarObjetoImagen(editObjetoVM.IdCategoria, editObjetoVM.RutaImagen, ruta);
-
-                        ObjetoDTO.RutaImagen = rutaImagen;
-                        ObjetoDTO.Id = idObjeto;
-
-                        await _service.Update(ObjetoDTO);
-                        return Ok(new { success = true, message = "Objeto actualizada exitosamente" });
-                    }
-                    else
-                    {
-                        return NotFound(new { success = false, message = "Objeto no encontrado" });
-                    }
                 }
                 else
                 {
-                    var objeto = await _dbContext.Objetos.FirstOrDefaultAsync(c => c.Id == idObjeto);
                     ObjetoDTO.RutaImagen = objeto.RutaImagen;
                     ObjetoDTO.Id = idObjeto;
                     await _service.Update(ObjetoDTO);

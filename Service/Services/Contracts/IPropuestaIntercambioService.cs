@@ -20,6 +20,7 @@ namespace Service.Services.Contracts
         Task<EndpointResponse<string>> ChangeStatus(int IdPropuestaIntercambio, Enums.EstatusPropuestaIntercambio estatus);
         Task<EndpointResponse<string>> DeletePropuesta(int id);
         Task<EndpointResponse<List<PropuestasIntercambiosVM>>> GetAllByIdObjeto(int idObjeto);
+        Task<EndpointResponse<List<PropuestasIntercambiosVM>>> GetAllByIdUsuarioAndIdObjeto(string idUsuario, int idObjeto);
         Task<EndpointResponse<List<PropuestasIntercambiosVM>>> GetAllPropuestas();
         Task<EndpointResponse<string>> UpdatePropuesta(int id, EditPropuestaIntercambioVM editPropuestaIntercambioVM);
     }

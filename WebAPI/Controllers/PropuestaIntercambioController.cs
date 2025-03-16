@@ -121,6 +121,30 @@ namespace WebAPI.Controllers
             }
         }
 
+        [HttpGet("GetAllByIdUsuarioAndIdObjeto")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        public async Task<ActionResult<PropuestasIntercambiosVM>> GetAllByIdUsuarioAndIdObjeto(string idUsuario, int idObjeto)
+        {
+            try
+            {
+                var itemDto = await _service.GetAllByIdUsuarioAndIdObjeto(idUsuario, idObjeto);
+                if (itemDto == null)
+                {
+                    return NotFound();
+                }
+                return Ok(itemDto);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdUsuarioAndIdObjeto)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
 
         [HttpGet("{id}")]
         [Authorize(Roles = "Administrador, Intercambiador")]
