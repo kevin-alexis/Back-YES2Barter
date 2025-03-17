@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Services.Contracts;
 using Service.Services.Implementation;
+using static Domain.Enumerations.Enums;
 
 
 
@@ -42,6 +43,7 @@ namespace WebAPI.Controllers
         {
             try
             {
+                createPropuestaIntercambioVM.Estado = EstatusPropuestaIntercambio.ENVIADA;
                 var result = await _service.AddPropuesta(createPropuestaIntercambioVM);
                 return Ok(result);
             }

@@ -110,7 +110,7 @@ namespace Service.Services.Implementation
                     IdUsuarioReceptor = objetoSolicitado.IdUsuario,
                     IdObjetoOfertado = createPropuestaIntercambioVM.IdObjetoOfertado,
                     IdObjetoSolicitado = createPropuestaIntercambioVM.IdObjetoSolicitado,
-                    Estado = createPropuestaIntercambioVM.Estado,
+                    Estado = EstatusPropuestaIntercambio.ENVIADA,
                     FechaPropuesta = DateTime.Now,
                     EsBorrado = false
                 };
