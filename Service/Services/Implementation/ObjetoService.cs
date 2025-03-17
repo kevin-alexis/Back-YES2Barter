@@ -61,6 +61,8 @@ namespace Service.Services.Implementation
                     Descripcion = objeto.Descripcion,
                     EsBorrado = objeto.EsBorrado,
                     FechaPublicacion = objeto.FechaPublicacion,
+                    IdCategoria = objeto.IdCategoria,
+                    IdUsuario = objeto.IdUsuario,
                     Estado = objeto.Estado,
                     RutaImagen = objeto.RutaImagen
                 }).ToList();
