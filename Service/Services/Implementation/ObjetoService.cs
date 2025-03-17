@@ -59,6 +59,7 @@ namespace Service.Services.Implementation
                     Id = objeto.Id,
                     Nombre = objeto.Nombre,
                     Descripcion = objeto.Descripcion,
+                    IdCategoria = objeto.IdCategoria,
                     EsBorrado = objeto.EsBorrado,
                     FechaPublicacion = objeto.FechaPublicacion,
                     IdCategoria = objeto.IdCategoria,
