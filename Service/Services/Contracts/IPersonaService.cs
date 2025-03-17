@@ -10,5 +10,7 @@ namespace Service.Services.Contracts
         Task<PersonaDTO> GetPersonaByIdDapper(int id);
         Task<PersonaDTO> GetPersonaByIdEf(int id);
         Task<PersonaDTO> GetPersonaByIdUsuario(string idUsuario);
+        Task<PersonaDTO> UpdatePersona(int id, PersonaDTO personaDto);
+
     }
 }
