@@ -71,10 +71,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<DataBaseContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddDbContextFactory<DataBaseContext>(
-        options =>
-            options.UseSqlServer(connectionString));
-
 // Configurar Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<DataBaseContext>()
