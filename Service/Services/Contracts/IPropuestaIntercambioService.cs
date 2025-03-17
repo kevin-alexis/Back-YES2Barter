@@ -1,6 +1,7 @@
 ﻿using Domain.DTOs;
 using Domain.Entities;
 using Domain.Enumerations;
+using Domain.ViewModels.AceptOrDeclinePropuestaIntercambio;
 using Domain.ViewModels.CreatePropuestaIntercambio;
 using Domain.ViewModels.EditPropuestaIntercambio;
 using Domain.ViewModels.GetPropuestasIntercambios;
@@ -16,6 +17,7 @@ namespace Service.Services.Contracts
 {
     public interface IPropuestaIntercambioService : IBaseService<PropuestaIntercambio, PropuestaIntercambioDTO>
     {
+        Task<EndpointResponse<string>> AcceptOrDeclinePropuestaIntercambio(AcceptOrDeclinePropuestaIntercambioVM acceptOrDeclinePropuestaIntercambio);
         Task<EndpointResponse<string>> AddPropuesta(CreatePropuestaIntercambioVM createPropuestaIntercambioVM);
         Task<EndpointResponse<string>> ChangeStatus(int IdPropuestaIntercambio, Enums.EstatusPropuestaIntercambio estatus);
         Task<EndpointResponse<string>> DeletePropuesta(int id);

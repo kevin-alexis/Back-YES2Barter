@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Domain.DTOs;
 using Domain.Entities;
+using Domain.ViewModels.AceptOrDeclinePropuestaIntercambio;
 using Domain.ViewModels.CreatePropuestaIntercambio;
 using Domain.ViewModels.EditPropuestaIntercambio;
 using Domain.ViewModels.GetPropuestasIntercambios;
@@ -188,6 +189,27 @@ namespace WebAPI.Controllers
                 {
                     Nivel = "Error",
                     Mensaje = $"Error en el método {nameof(GetAllByIdObjeto)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
+
+        [HttpPost("AcceptOrDeclinePropuestaIntercambio")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        public async Task<IActionResult> AcceptOrDeclinePropuestaIntercambio([FromBody] AcceptOrDeclinePropuestaIntercambioVM acceptOrDeclinePropuestaIntercambio)
+        { 
+            try
+            {
+                var result = await _service.AcceptOrDeclinePropuestaIntercambio(acceptOrDeclinePropuestaIntercambio);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(AcceptOrDeclinePropuestaIntercambio)}: {ex.Message}",
                     Excepcion = ex.ToString()
                 });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");

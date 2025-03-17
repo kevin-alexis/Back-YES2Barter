@@ -3,6 +3,7 @@ using Azure;
 using Dapper;
 using Domain.DTOs;
 using Domain.Entities;
+using Domain.ViewModels.AceptOrDeclinePropuestaIntercambio;
 using Domain.ViewModels.CreatePropuestaIntercambio;
 using Domain.ViewModels.EditPropuestaIntercambio;
 using Domain.ViewModels.GetChats;
@@ -60,10 +61,18 @@ namespace Service.Services.Implementation
                     return new EndpointResponse<string> { Message = "No se pudo obtener los objetos.", Success = false };
                 }
 
+                //var estatusPropuestasExistentes = new[]{
+                //    EstatusPropuestaIntercambio.ENVIADA,
+                //    EstatusPropuestaIntercambio.ACEPTADA,
+                //    EstatusPropuestaIntercambio.RECHAZADA,
+                //    EstatusPropuestaIntercambio.NO_CONCRETADA
+                //};
+
                 // Si hay una igual pero diferente estatus, tomar en cuenta que no deberia dejar crearlo
                 var propuestaExistente = _context.PropuestasIntercambios.FirstOrDefault(x =>
                 x.IdObjetoOfertado == createPropuestaIntercambioVM.IdObjetoOfertado &&
                 x.IdObjetoSolicitado == createPropuestaIntercambioVM.IdObjetoSolicitado &&
+                //estatusPropuestasExistentes.Contains(x.Estado) &&
                 !x.EsBorrado
                 );
 
@@ -98,11 +107,12 @@ namespace Service.Services.Implementation
                     await _context.Chats.AddAsync(chatNuevo);
                     await _context.SaveChangesAsync();
                     return new EndpointResponse<string> { Message = "Ya existia una propuesta, por lo que fue aceptada y se ha abierto un chat para su seguimiento.", Success = true };
-                } else if(propuestaExistenteInversa != null)
-                {
-                    // En caso de que si exista, pero ya este en otro estatus, se avisa que ya hay una propuesta existente con esos valores
-                    return new EndpointResponse<string> { Message = "Ya hay una propuesta existente con esos valores.", Success = false };
-                }
+                } 
+                //else if(propuestaExistenteInversa != null)
+                //{
+                //        // En caso de que si exista, pero ya este en otro estatus, se avisa que ya hay una propuesta existente con esos valores
+                //        return new EndpointResponse<string> { Message = "Ya hay una propuesta existente con esos valores.", Success = false };
+                //}
 
                 PropuestaIntercambioDTO propuestaIntercambioDTO = new PropuestaIntercambioDTO()
                 {
@@ -398,8 +408,6 @@ namespace Service.Services.Implementation
             }
         }
 
-
-
         public async Task<EndpointResponse<List<PropuestasIntercambiosVM>>> GetAllPropuestas()
         {
             try
@@ -479,6 +487,9 @@ namespace Service.Services.Implementation
 
                 var result = await _context.PropuestasIntercambios
                     .Where(x => x.EsBorrado == false && (x.IdObjetoOfertado == idObjeto || x.IdObjetoSolicitado == idObjeto) && x.Estado == EstatusPropuestaIntercambio.ENVIADA)
+                    .Include(x => x.UsuarioReceptor)
+                    .Include(x => x.ObjetoOfertado)
+                    .Include(x => x.ObjetoSolicitado)
                     .ToListAsync();
 
                 if (!result.Any())
@@ -491,34 +502,32 @@ namespace Service.Services.Implementation
                     };
                 }
 
-                var propuestaIntercambioDTOs = await Task.WhenAll(result.Select(async propuestaIntercambio =>
-                {
-                    var personaOfertante = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestaIntercambio.IdUsuarioOfertante);
-                    var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestaIntercambio.IdUsuarioReceptor);
-                    var objetoOfertado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestaIntercambio.IdObjetoOfertado);
-                    var objetoSolicitado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestaIntercambio.IdObjetoSolicitado);
+                var usuarioIds = result.SelectMany(p => new[] { p.IdUsuarioOfertante, p.IdUsuarioReceptor }).Distinct();
+                var personas = await _context.Personas
+                    .Where(p => usuarioIds.Contains(p.IdUsuario))
+                    .ToDictionaryAsync(p => p.IdUsuario);
 
-                    return new PropuestasIntercambiosVM
-                    {
-                        Id = propuestaIntercambio.Id,
-                        IdUsuarioOfertante = propuestaIntercambio.IdUsuarioOfertante,
-                        PersonaOfertante = personaOfertante,
-                        IdUsuarioReceptor = propuestaIntercambio.IdUsuarioReceptor,
-                        PersonaReceptor = personaReceptor,
-                        IdObjetoOfertado = propuestaIntercambio.IdObjetoOfertado,
-                        ObjetoOfertado = objetoOfertado,
-                        IdObjetoSolicitado = propuestaIntercambio.IdObjetoSolicitado,
-                        ObjetoSolicitado = objetoSolicitado,
-                        FechaPropuesta = propuestaIntercambio.FechaPropuesta,
-                        Estado = propuestaIntercambio.Estado
-                    };
-                }));
+                var propuestaIntercambioDTOs = result.Select(propuesta => new PropuestasIntercambiosVM
+                {
+                    Id = propuesta.Id,
+                    IdUsuarioOfertante = propuesta.IdUsuarioOfertante,
+                    PersonaOfertante = personas.GetValueOrDefault(propuesta.IdUsuarioOfertante),
+                    IdUsuarioReceptor = propuesta.IdUsuarioReceptor,
+                    PersonaReceptor = personas.GetValueOrDefault(propuesta.IdUsuarioReceptor),
+                    IdObjetoOfertado = propuesta.IdObjetoOfertado,
+                    ObjetoOfertado = propuesta.ObjetoOfertado,     
+                    IdObjetoSolicitado = propuesta.IdObjetoSolicitado,
+                    ObjetoSolicitado = propuesta.ObjetoSolicitado, 
+                    FechaPropuesta = propuesta.FechaPropuesta,
+                    Estado = propuesta.Estado
+                }).ToList();
+
 
                 return new EndpointResponse<List<PropuestasIntercambiosVM>>
                 {
                     Message = "Propuestas de intercambios obtenidas con éxito",
                     Success = true,
-                    Data = propuestaIntercambioDTOs.ToList()
+                    Data = propuestaIntercambioDTOs
                 };
             }
             catch (Exception ex)
@@ -588,6 +597,57 @@ namespace Service.Services.Implementation
                 throw new Exception("Error al actualizar el elemento", ex);
             }
         }
+
+        public async Task<EndpointResponse<string>> AcceptOrDeclinePropuestaIntercambio(AcceptOrDeclinePropuestaIntercambioVM acceptOrDeclinePropuestaIntercambio)
+        {
+            try
+            {
+                var propuesta = _context.PropuestasIntercambios.FirstOrDefault(x => x.Id == acceptOrDeclinePropuestaIntercambio.idPropuesta &&
+                !x.EsBorrado
+                );
+
+                if (propuesta == null)
+                {
+                    return new EndpointResponse<string> { Message = "No hay una propuesta existente con esos valores.", Success = false };
+                }
+
+                if (acceptOrDeclinePropuestaIntercambio.isAccepted)
+                {
+                    propuesta.Estado = EstatusPropuestaIntercambio.ACEPTADA;
+
+                    var chatNuevo = new Chat()
+                    {
+                        IdUsuario1 = propuesta.IdUsuarioOfertante,
+                        IdUsuario2 = propuesta.IdUsuarioReceptor,
+                        IdPropuestaIntercambio = propuesta.Id,
+                        EsBorrado = false,
+                    };
+                    await _context.Chats.AddAsync(chatNuevo);
+
+                }
+                else
+                {
+                    propuesta.Estado = EstatusPropuestaIntercambio.RECHAZADA;
+
+                }
+
+                _context.PropuestasIntercambios.Update(propuesta);
+                await _context.SaveChangesAsync();
+
+                return new EndpointResponse<string> { Message = "Propuesta Modificada con Exito.", Success = true };
+
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(AddPropuesta)}, de la clase {nameof(PropuestaIntercambioService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                }); throw new Exception("Error al agregar el elemento", ex);
+            }
+        }
+
 
     }
 }
