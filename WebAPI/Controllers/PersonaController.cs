@@ -207,5 +207,80 @@ namespace WebAPI.Controllers
 
             }
         }
+
+        [HttpPut("UpdateFotoPerfil/{id}")]
+        public async Task<IActionResult> UpdateFotoPerfil(int id, [FromForm] IFormFile fotoPerfil)
+        {
+            try
+            {
+                if (fotoPerfil == null)
+                {
+                    return Ok(new EndpointResponse<Persona> { Message = "La foto de perfil es obligatoria", Success = false, Data = null });
+                }
+
+                var persona = await _context.Personas.FindAsync(id);
+                if (persona == null)
+                {
+                    return Ok(new EndpointResponse<Persona> { Message = "Persona no encontrada.", Success = false, Data = null });
+
+                }
+
+                // Validar la extensión de la imagen
+                var extension = Path.GetExtension(fotoPerfil.FileName).ToLower();
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".svg", ".webp" };
+                if (!allowedExtensions.ToList().Contains(extension))
+                {
+                    return Ok(new EndpointResponse<Persona> { Message = "El formato de la imagen no es válido.", Success = false, Data = null });
+                }
+
+                // Generar un nombre único para el archivo
+                string fecha = DateTime.Now.ToString("dd-MM-yyyy_HHmmss");
+                string nombreArchivo = $"FotoPerfil_{persona.Id}_{fecha}{extension}";
+
+                var uploadsFolder = Path.Combine(_env.ContentRootPath, "Uploads", "FotoPerfil", persona.Id.ToString());
+                if (Directory.Exists(uploadsFolder))
+                {
+                    var archivos = Directory.GetFiles(uploadsFolder);
+                    foreach (var archivo in archivos)
+                    {
+                        if (!archivo.EndsWith("FotoPerfilDefecto.png"))
+                        {
+                            System.IO.File.Delete(archivo);
+                        }
+                    }
+                }
+                else
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                var filePath = Path.Combine(uploadsFolder, nombreArchivo);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await fotoPerfil.CopyToAsync(stream);
+                }
+                // Guardar la ruta en la base de datos
+                string rutaProcesada = Path.Combine("Uploads", "FotoPerfil", persona.Id.ToString(), nombreArchivo);
+
+                persona.RutaFotoPerfil = rutaProcesada;
+        
+              
+                _context.Personas.Update(persona);
+                await _context.SaveChangesAsync();
+                return Ok(new EndpointResponse<Persona> { Message = "Foto de Perfil editada correctamente", Success = true, Data = persona });
+
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(UpdateFotoPerfil)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+
+            }
+        }
     }
 }
