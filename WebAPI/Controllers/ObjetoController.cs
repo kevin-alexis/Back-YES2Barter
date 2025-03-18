@@ -105,12 +105,12 @@ namespace WebAPI.Controllers
             {
                 var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
                 var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
-                
+
+                createObjetoVM.Estado = EstatusObjeto.DISPONIBLE;
                 createObjetoVM.FechaPublicacion = DateTime.Now;
 
                 if (userRole == "Intercambiador" && userId != null)
                 {
-                    createObjetoVM.Estado = EstatusObjeto.DISPONIBLE;
                     createObjetoVM.IdUsuario = userId;
                 }
 
@@ -147,7 +147,10 @@ namespace WebAPI.Controllers
                 ObjetoDTO.FechaPublicacion = objeto.FechaPublicacion;
 
                 var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
-                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;              
+                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
+
+                ObjetoDTO.Estado = objeto.Estado;
+                ObjetoDTO.IdUsuario = objeto.IdUsuario;
 
                 if (editObjetoVM.RutaImagen != null)
                 {
