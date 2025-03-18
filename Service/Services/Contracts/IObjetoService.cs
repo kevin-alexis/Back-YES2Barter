@@ -20,5 +20,6 @@ namespace Service.Services.Contracts
         Task<EndpointResponse<List<ObjetoDTO>>> GetAllByIdUsuario(string idUsuario);
         Task<EndpointResponse<List<ObjetoDTO>>> GetByName(string name);
         Task<string> GuardarObjetoImagen(int idCategoria, IFormFile objetoImagen, string ruta);
+        new Task<EndpointResponse<int>> Delete(int id);
     }
 }

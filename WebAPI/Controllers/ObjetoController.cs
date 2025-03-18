@@ -189,12 +189,19 @@ namespace WebAPI.Controllers
                 var itemDto = await _service.GetById(id);
                 if (itemDto == null)
                 {
-                    return NotFound();
+                    return NotFound(new { message = "El objeto no existe." });
                 }
 
-                await _service.Delete(id);           
+                var response = await _service.Delete(id);
 
-                return Ok();
+                if (!response.Success)
+                {
+                    return BadRequest(new { success = false, message = response.Message });
+                }
+
+
+                return Ok(new { success = true, message = response.Message });
+
             }
             catch (Exception ex)
             {
@@ -204,8 +211,11 @@ namespace WebAPI.Controllers
                     Mensaje = $"Error en el método {nameof(Delete)}: {ex.Message}",
                     Excepcion = ex.ToString()
                 });
-                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+
+                return StatusCode(500, new { success = false, message = $"Error interno del servidor: {ex.Message}" });
             }
+
         }
+
     }
 }
