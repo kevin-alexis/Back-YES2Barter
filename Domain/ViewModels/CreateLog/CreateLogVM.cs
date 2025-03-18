@@ -9,6 +9,7 @@ namespace Domain.ViewModels.CreateLog
     public class CreateLogVM
     {
         public DateTime Fecha { get; set; }
+        public string Fuente { get; set; }
         public string Nivel { get; set; }
         public string Mensaje { get; set; }
         public string Excepcion { get; set; }

@@ -18,7 +18,7 @@ namespace Domain.ViewModels.GetObjetos
         public string RutaImagen { get; set; }
         public int IdCategoria { get; set; }
         public EstatusObjeto Estado { get; set; }
-
+        public string IdUsuario { get; set; }
 
     }
 }

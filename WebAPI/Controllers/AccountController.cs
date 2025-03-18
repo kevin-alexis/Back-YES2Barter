@@ -1,13 +1,18 @@
 ﻿using Domain.DTOs;
 using Domain.Entities;
+using Domain.ViewModels.Account;
 using Domain.ViewModels.CreateAccountVM;
 using Domain.ViewModels.Login;
+using Domain.ViewModels.Response;
 using Domain.ViewModels.UpdateAccountVM;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using Service.Services;
 using Service.Services.Contracts;
 using Service.Services.Implementation;
+using System.ComponentModel;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -18,22 +23,126 @@ namespace WebAPI.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly ILogService _logService;
 
-        public AccountController(IAccountService accountService)
+
+        public AccountController(IAccountService accountService, ILogService logService)
         {
             _accountService = accountService;
+            _logService = logService;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginVM loginVM)
         {
-            var result = await _accountService.LoginAsync(loginVM);
-            if (result.Success == true)
+            try
             {
+                var result = await _accountService.LoginAsync(loginVM);
+                if (result.Success == true)
+                {
+                    Response.Cookies.Append("access_token", result.Token, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTime.UtcNow.AddMinutes(120),
+                        Path = "/"
+                    });
+
+                    Response.Cookies.Append("refresh_token", result.RefreshToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTime.UtcNow.AddDays(7),
+                        Path = "/"
+                    });
+
+                    return Ok(result);
+                }
+
                 return Ok(result);
             }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(Login)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
 
-            return Unauthorized(result);
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+            {
+            var refreshToken = Request.Cookies["refresh_token"];
+
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                await _accountService.LogOut(refreshToken);
+                
+            }
+
+            // Asegurar la eliminación de las cookies con opciones adecuadas
+            var cookieOptions = new CookieOptions
+            {
+                Path = "/",
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(-1) // Forzar expiración
+            };
+
+            Response.Cookies.Append("access_token", "", cookieOptions);
+            Response.Cookies.Append("refresh_token", "", cookieOptions);
+
+            return Ok(new { message = "Sesión cerrada exitosamente." });
+        }
+
+
+
+        [HttpPost("refreshToken")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refresh_token"];
+
+            //Console.WriteLine($"refreshToken recibido: {refreshToken}");
+            //Console.WriteLine($"Cookies recibidas: {string.Join(", ", Request.Cookies.Keys)}");
+
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return BadRequest(new { message = "No se proporcionó un refresh token válido" });
+            }
+
+            var result = await _accountService.RefreshAccessTokenAsync(refreshToken);
+
+            if (!result.Success)
+            {
+                return Unauthorized(new { message = result.Message });
+            }
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
+            Response.Cookies.Append("access_token", result.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(120),
+                Path = "/"
+            });
+            Response.Cookies.Append("refresh_token", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Path = "/",
+            });
+
+            return Ok(result);
         }
 
         [HttpGet("GetAllAccounts")]
@@ -47,6 +156,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllAccounts)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -61,6 +176,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetById)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -75,6 +196,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(DeleteAccountAsync)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -89,6 +216,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CreateAccount)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -103,6 +236,12 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(UpdateAccountAsync)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
@@ -110,14 +249,27 @@ namespace WebAPI.Controllers
         [HttpPost("validateToken")]
         public async Task<IActionResult> ValidateJwtToken([FromBody] string token)
         {
-            var result = await _accountService.ValidateJwtToken(token);
-
-            if (result.Message == "Token Invalido")
+            try
             {
-                return Unauthorized(new { message = "User not found." });
-            }
+                var result = await _accountService.ValidateJwtToken(token);
 
-            return Ok(result);
+                if (result.Message == "Token Invalido")
+                {
+                    return Unauthorized(new { message = "User not found." });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ValidateJwtToken)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         [HttpGet("getAllRoles")]
@@ -131,8 +283,37 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ValidateJwtToken)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
+
+        [HttpGet("currentUser")]
+        [Authorize(Roles = "Administrador, Intercambiador")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Ok(new { success = false, message = "No se encontró el ID del usuario en los claims" });
+            }
+
+            var response = await _accountService.GetCurrentUser(userId);
+
+            if (!response.Success)
+            {
+                return Ok(response);
+            }
+
+            return Ok(response);
+        }
     }
+
+
 }

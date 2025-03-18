@@ -11,5 +11,6 @@ namespace Service.Services.Contracts
 {
     public interface ICategoriaService : IBaseService<Categoria, CategoriaDTO>
     {
+        new Task<EndpointResponse<int>> Delete(int id);
     }
 }

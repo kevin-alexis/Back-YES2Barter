@@ -13,10 +13,13 @@ namespace Service.Services.Contracts
 {
     public interface IObjetoService : IBaseService<Objeto, ObjetoDTO>
     {
-        Task ChangeStatus(int IdObjeto, Enums.EstatusObjeto estatus);
+        Task<EndpointResponse<string>> ChangeStatus(int IdObjeto, Enums.EstatusObjeto estatus);
         Task<bool> EliminarObjetoImagen(int idObjeto, string ruta);
         Task<EndpointResponse<List<ObjetoDTO>>> GetAllByIdCategoria(int idCategoria);
+        Task<EndpointResponse<List<ObjetoDTO>>> GetAllByIdEstatus(Enums.EstatusObjeto? estatus);
+        Task<EndpointResponse<List<ObjetoDTO>>> GetAllByIdUsuario(string idUsuario);
         Task<EndpointResponse<List<ObjetoDTO>>> GetByName(string name);
         Task<string> GuardarObjetoImagen(int idCategoria, IFormFile objetoImagen, string ruta);
+        new Task<EndpointResponse<int>> Delete(int id);
     }
 }
