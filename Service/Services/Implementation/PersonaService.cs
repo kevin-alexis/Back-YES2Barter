@@ -9,6 +9,8 @@ using Service.Logging;
 using Domain.ViewModels.Response;
 using System.IdentityModel.Tokens.Jwt;
 using static Domain.Enumerations.Enums;
+using Domain.ViewModels.EditPersona;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Service.Services.Implementation
 {
@@ -122,5 +124,21 @@ namespace Service.Services.Implementation
                 throw new Exception($"Error al obtener el elemento con id {id}", ex);
             }
         }
+        public async Task<PersonaDTO> UpdatePersona(int id, PersonaDTO personaDto)
+        {
+            var persona = await _context.Personas.FindAsync(id);
+            if (persona == null)
+                return null;
+
+            persona.Nombre = personaDto.Nombre;
+            persona.Biografia = personaDto.Biografia;
+            if (!string.IsNullOrEmpty(personaDto.RutaFotoPerfil))
+                persona.RutaFotoPerfil = personaDto.RutaFotoPerfil;
+            _context.Personas.Update(persona);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<PersonaDTO>(persona);
+        }
+
     }
+
 }
