@@ -189,7 +189,7 @@ namespace WebAPI.Controllers
                 var itemDto = await _service.GetById(id);
                 if (itemDto == null)
                 {
-                    return NotFound(new { message = "El objeto no existe." });
+                    return NotFound(new { success = false, message = "El objeto no existe." });
                 }
 
                 var response = await _service.Delete(id);
