@@ -356,22 +356,60 @@ namespace Service.Services.Implementation
             }
         }
 
-        override public async Task Delete(int id)
+        override public async Task<EndpointResponse<int>> Delete(int id)
         {
             try
             {
+           
                 var item = await _dbSet.FindAsync(id);
-                if (item != null)
+                if (item == null)
                 {
-                    var esBorradoProperty = item.GetType().GetProperty("EsBorrado");
-                    if (esBorradoProperty != null)
+                    return new EndpointResponse<int>
                     {
-                        esBorradoProperty.SetValue(item, true);
-                        _dbSet.Update(item);
-                        await _context.SaveChangesAsync();
-                    }
-
+                        Success = false,
+                        Message = "El objeto no existe",
+                        Data = 0
+                    };
                 }
+
+                
+                bool tieneIntercambioActivo = await _context.Set<PropuestaIntercambio>()
+                    .AnyAsync(p => (p.IdObjetoOfertado == id || p.IdObjetoSolicitado == id) &&
+                                    (p.Estado == EstatusPropuestaIntercambio.ENVIADA ||
+                                     p.Estado == EstatusPropuestaIntercambio.ACEPTADA));
+
+                if (tieneIntercambioActivo)
+                {
+                    return new EndpointResponse<int>
+                    {
+                        Success = false,
+                        Message = "No se puede eliminar el objeto porque está en un intercambio activo.",
+                        Data = 0
+                    };
+                }
+
+                
+                var esBorradoProperty = item.GetType().GetProperty("EsBorrado");
+                if (esBorradoProperty != null)
+                {
+                    esBorradoProperty.SetValue(item, true);
+                    _dbSet.Update(item);
+                    await _context.SaveChangesAsync();
+
+                    return new EndpointResponse<int>
+                    {
+                        Success = true,
+                        Message = "Objeto eliminado correctamente",
+                        Data = id
+                    };
+                }
+
+                return new EndpointResponse<int>
+                {
+                    Success = false,
+                    Message = "No se pudo eliminar el objeto",
+                    Data = 0
+                };
             }
             catch (Exception ex)
             {
@@ -381,9 +419,16 @@ namespace Service.Services.Implementation
                     Mensaje = $"Error en el método {nameof(Delete)}, de la clase {nameof(ObjetoService)}: {ex.Message}",
                     Excepcion = ex.ToString()
                 });
-                throw new Exception($"Error al eliminar el elemento con id {id}", ex);
+
+                return new EndpointResponse<int>
+                {
+                    Success = false,
+                    Message = "Ocurrió un error al eliminar el objeto",
+                    Data = 0
+                };
             }
         }
+
 
         public async Task<EndpointResponse<string>> ChangeStatus(int IdObjeto, EstatusObjeto estatus)
         {

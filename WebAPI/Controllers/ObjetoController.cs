@@ -105,12 +105,12 @@ namespace WebAPI.Controllers
             {
                 var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
                 var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
-                
+
+                createObjetoVM.Estado = EstatusObjeto.DISPONIBLE;
                 createObjetoVM.FechaPublicacion = DateTime.Now;
 
                 if (userRole == "Intercambiador" && userId != null)
                 {
-                    createObjetoVM.Estado = EstatusObjeto.DISPONIBLE;
                     createObjetoVM.IdUsuario = userId;
                 }
 
@@ -147,7 +147,10 @@ namespace WebAPI.Controllers
                 ObjetoDTO.FechaPublicacion = objeto.FechaPublicacion;
 
                 var userId = _httpContextAccessor.HttpContext?.User.FindFirst("uid")?.Value;
-                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;              
+                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
+
+                ObjetoDTO.Estado = objeto.Estado;
+                ObjetoDTO.IdUsuario = objeto.IdUsuario;
 
                 if (editObjetoVM.RutaImagen != null)
                 {
@@ -186,12 +189,19 @@ namespace WebAPI.Controllers
                 var itemDto = await _service.GetById(id);
                 if (itemDto == null)
                 {
-                    return NotFound();
+                    return NotFound(new { success = false, message = "El objeto no existe." });
                 }
 
-                await _service.Delete(id);           
+                var response = await _service.Delete(id);
 
-                return Ok();
+                if (!response.Success)
+                {
+                    return BadRequest(new { success = false, message = response.Message });
+                }
+
+
+                return Ok(new { success = true, message = response.Message });
+
             }
             catch (Exception ex)
             {
@@ -201,8 +211,11 @@ namespace WebAPI.Controllers
                     Mensaje = $"Error en el método {nameof(Delete)}: {ex.Message}",
                     Excepcion = ex.ToString()
                 });
-                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+
+                return StatusCode(500, new { success = false, message = $"Error interno del servidor: {ex.Message}" });
             }
+
         }
+
     }
 }
