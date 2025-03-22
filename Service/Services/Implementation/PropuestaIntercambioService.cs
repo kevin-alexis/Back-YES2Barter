@@ -53,66 +53,27 @@ namespace Service.Services.Implementation
         {
             try
             {
-                var objetoOfertado = _context.Objetos.FirstOrDefault(x=> x.Id == createPropuestaIntercambioVM.IdObjetoOfertado);
-                var objetoSolicitado = _context.Objetos.FirstOrDefault(x=> x.Id == createPropuestaIntercambioVM.IdObjetoSolicitado);
+                var objetoOfertado = _context.Objetos.FirstOrDefault(x => x.Id == createPropuestaIntercambioVM.IdObjetoOfertado);
+                var objetoSolicitado = _context.Objetos.FirstOrDefault(x => x.Id == createPropuestaIntercambioVM.IdObjetoSolicitado);
 
-                if(objetoOfertado == null || objetoSolicitado == null)
+                if (objetoOfertado == null || objetoSolicitado == null)
                 {
                     return new EndpointResponse<string> { Message = "No se pudo obtener los objetos.", Success = false };
                 }
 
-                //var estatusPropuestasExistentes = new[]{
-                //    EstatusPropuestaIntercambio.ENVIADA,
-                //    EstatusPropuestaIntercambio.ACEPTADA,
-                //    EstatusPropuestaIntercambio.RECHAZADA,
-                //    EstatusPropuestaIntercambio.NO_CONCRETADA
-                //};
-
-                // Si hay una igual pero diferente estatus, tomar en cuenta que no deberia dejar crearlo
+                // Validar si ya existe una propuesta con los mismos artículos (en cualquier orden)
                 var propuestaExistente = _context.PropuestasIntercambios.FirstOrDefault(x =>
-                x.IdObjetoOfertado == createPropuestaIntercambioVM.IdObjetoOfertado &&
-                x.IdObjetoSolicitado == createPropuestaIntercambioVM.IdObjetoSolicitado &&
-                //estatusPropuestasExistentes.Contains(x.Estado) &&
-                !x.EsBorrado
+                    (x.IdObjetoOfertado == createPropuestaIntercambioVM.IdObjetoOfertado &&
+                     x.IdObjetoSolicitado == createPropuestaIntercambioVM.IdObjetoSolicitado) ||
+                    (x.IdObjetoOfertado == createPropuestaIntercambioVM.IdObjetoSolicitado &&
+                     x.IdObjetoSolicitado == createPropuestaIntercambioVM.IdObjetoOfertado) &&
+                    !x.EsBorrado
                 );
 
-                if(propuestaExistente != null)
+                if (propuestaExistente != null)
                 {
-                    return new EndpointResponse<string> { Message = "Ya hay una propuesta existente con esos valores.", Success = false };
+                    return new EndpointResponse<string> { Message = "Ya hay una propuesta existente con estos objetos.", Success = false };
                 }
-
-                var propuestaExistenteInversa = _context.PropuestasIntercambios.FirstOrDefault(x =>
-                x.IdObjetoOfertado == createPropuestaIntercambioVM.IdObjetoSolicitado &&
-                x.IdObjetoSolicitado == createPropuestaIntercambioVM.IdObjetoOfertado && 
-                !x.EsBorrado
-                );
-                // En caso de que se le este ofreciendo el mismo producto que otro ya ofrecio, checamos el estatus y si esta en enviado,
-                // podemos activarle su chat y cambiarle el estatus. ESTO IGUAL SOLO SI VIENE CON ESTATUS ENVIADO
-                if (propuestaExistenteInversa != null && propuestaExistenteInversa.Estado == EstatusPropuestaIntercambio.ENVIADA 
-                    && (createPropuestaIntercambioVM.Estado == EstatusPropuestaIntercambio.ENVIADA || 
-                    createPropuestaIntercambioVM.Estado == EstatusPropuestaIntercambio.ACEPTADA))
-                {
-                    propuestaExistenteInversa.Estado = EstatusPropuestaIntercambio.ACEPTADA;
-                    _dbSet.Update(propuestaExistenteInversa);
-                    await _context.SaveChangesAsync();
-
-                    var chatNuevo = new Chat()
-                    {
-                        IdUsuario1 = propuestaExistenteInversa.IdUsuarioOfertante,
-                        IdUsuario2 = propuestaExistenteInversa.IdUsuarioReceptor,
-                        IdPropuestaIntercambio = propuestaExistenteInversa.Id,
-                        EsBorrado = false,
-                    };
-
-                    await _context.Chats.AddAsync(chatNuevo);
-                    await _context.SaveChangesAsync();
-                    return new EndpointResponse<string> { Message = "Ya existia una propuesta, por lo que fue aceptada y se ha abierto un chat para su seguimiento.", Success = true };
-                } 
-                //else if(propuestaExistenteInversa != null)
-                //{
-                //        // En caso de que si exista, pero ya este en otro estatus, se avisa que ya hay una propuesta existente con esos valores
-                //        return new EndpointResponse<string> { Message = "Ya hay una propuesta existente con esos valores.", Success = false };
-                //}
 
                 PropuestaIntercambioDTO propuestaIntercambioDTO = new PropuestaIntercambioDTO()
                 {
@@ -129,15 +90,15 @@ namespace Service.Services.Implementation
                 await _dbSet.AddAsync(item);
                 await _context.SaveChangesAsync();
 
-
                 var chat = await _context.Chats.FirstOrDefaultAsync(x => x.IdPropuestaIntercambio == item.Id && !x.EsBorrado);
 
-                var estatusDisponibles = new[]{
-                    EstatusPropuestaIntercambio.ENVIADA,
-                    EstatusPropuestaIntercambio.ACEPTADA,
-                    EstatusPropuestaIntercambio.RECHAZADA,
-                    EstatusPropuestaIntercambio.NO_CONCRETADA
-                };
+                var estatusDisponibles = new[]
+                {
+            EstatusPropuestaIntercambio.ENVIADA,
+            EstatusPropuestaIntercambio.ACEPTADA,
+            EstatusPropuestaIntercambio.RECHAZADA,
+            EstatusPropuestaIntercambio.NO_CONCRETADA
+        };
 
                 if (estatusDisponibles.Contains(item.Estado))
                 {
@@ -161,7 +122,7 @@ namespace Service.Services.Implementation
                     }
                 }
 
-                if(item.Estado == EstatusPropuestaIntercambio.ACEPTADA)
+                if (item.Estado == EstatusPropuestaIntercambio.ACEPTADA)
                 {
                     var chatNuevo = new Chat()
                     {
@@ -173,11 +134,9 @@ namespace Service.Services.Implementation
 
                     await _context.Chats.AddAsync(chatNuevo);
                     await _context.SaveChangesAsync();
-
                 }
 
-                return new EndpointResponse<string> { Message = "Propuesta Creada con Exito.", Success = true };
-
+                return new EndpointResponse<string> { Message = "Propuesta creada con éxito.", Success = true };
             }
             catch (Exception ex)
             {
@@ -186,9 +145,11 @@ namespace Service.Services.Implementation
                     Nivel = "Error",
                     Mensaje = $"Error en el método {nameof(AddPropuesta)}, de la clase {nameof(PropuestaIntercambioService)}: {ex.Message}",
                     Excepcion = ex.ToString()
-                }); throw new Exception("Error al agregar el elemento", ex);
+                });
+                throw new Exception("Error al agregar el elemento", ex);
             }
         }
+
 
         public async Task<EndpointResponse<string>> UpdatePropuesta(int id, EditPropuestaIntercambioVM editPropuestaIntercambioVM)
         {
