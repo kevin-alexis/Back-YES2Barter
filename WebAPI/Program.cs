@@ -13,11 +13,14 @@ using Repository.Seeders.SeedersRegister;
 using Service.Logging;
 using Service.Mappings;
 using Service.Register;
+using Service.Services.Contracts;
+using Service.Services.Implementation;
 using Service.SignalR;
 using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // Configuración para aumentar el tamaño máximo del cuerpo de la solicitud en Kestrel - Esto lo agregue porque no me dejaba enviar archivos grandes
 builder.Services.Configure<KestrelServerOptions>(options =>
@@ -83,6 +86,10 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Registrar el seeder
 builder.Services.AddTransient<DataBaseSeeder>();
 
+//
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IUserService, UserService>();
 // Agregar autenticación JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);

@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DTOs
 {
-    public class ForgotPasswordDTO
+    public class ForgotPasswordRequest
     {
-        public string Email { get; set; } = string.Empty;
+        public string Email { get; set; }
     }
 }
