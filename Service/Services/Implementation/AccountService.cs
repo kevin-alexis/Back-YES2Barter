@@ -677,7 +677,78 @@ namespace Service.Services.Implementation
             }
         }
 
-       
+        public async Task<EndpointResponse<AccountVM>> GetByEmail(string email)
+        {
+            try
+            {
+                // Validar que el email no esté vacío o sea nulo
+                if (string.IsNullOrEmpty(email))
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "El email es requerido",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                // Buscar la persona por email y que no esté marcada como borrada
+                var result = await _context.Personas
+                    .Include(x => x.Usuario)
+                    .FirstOrDefaultAsync(x => x.Usuario.Email == email && x.EsBorrado == false);
+
+                if (result == null)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "No se encontró la cuenta con ese email",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                // Obtener los roles del usuario
+                var roles = await _userManager.GetRolesAsync(result.Usuario);
+
+                var userRole = roles.FirstOrDefault();
+                var roleId = string.Empty;
+
+                if (userRole != null)
+                {
+                    var role = await _roleManager.FindByNameAsync(userRole);
+                    roleId = role?.Id;
+                }
+
+                // Mapear los datos a AccountVM
+                var accountVM = new AccountVM
+                {
+                    IdPersona = result.Id.ToString(),
+                    Nombre = result.Nombre,
+                    Email = result.Usuario.Email,
+                    IdUsuario = result.Usuario.Id.ToString(),
+                    Rol = userRole ?? "No Role",
+                    IdRol = roleId ?? "No Role Id"
+                };
+
+                return new EndpointResponse<AccountVM>
+                {
+                    Message = "Cuenta obtenida con éxito",
+                    Success = true,
+                    Data = accountVM
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetByEmail)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
         public async Task<EndpointResponse<string>> DeleteAccountAsync(int id)
         {
             try
