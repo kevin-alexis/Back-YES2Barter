@@ -124,6 +124,34 @@ namespace Service.Services.Implementation
                 throw new Exception($"Error al obtener el elemento con id {id}", ex);
             }
         }
+
+        public async Task<PersonaDTO> GetPersonaByEmailDapper(string email)
+        {
+            try
+            {
+                using (var connection = _context.Database.GetDbConnection())
+                {
+                    var query = "SELECT * FROM AspNetUsers WHERE Email = @Email";
+                    var item = await connection.QueryFirstOrDefaultAsync<Persona>(query, new { Email = email });
+
+                    if (item != null)
+                    {
+                        return _mapper.Map<PersonaDTO>(item);
+                    }
+                    return default(PersonaDTO);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByEmailDapper)}, de la clase {nameof(PersonaService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw new Exception($"Error al obtener el elemento con email {email}", ex);
+            }
+        }
         public async Task<PersonaDTO> UpdatePersona(int id, PersonaDTO personaDto)
         {
             var persona = await _context.Personas.FindAsync(id);

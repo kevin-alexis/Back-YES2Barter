@@ -1,4 +1,5 @@
-﻿using Domain.ViewModels.Account;
+﻿using Domain.DTOs;
+using Domain.ViewModels.Account;
 using Domain.ViewModels.CreateAccountVM;
 using Domain.ViewModels.Login;
 using Domain.ViewModels.Response;
@@ -11,6 +12,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace Service.Services.Contracts
 {

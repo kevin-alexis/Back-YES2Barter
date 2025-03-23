@@ -677,6 +677,7 @@ namespace Service.Services.Implementation
             }
         }
 
+       
         public async Task<EndpointResponse<string>> DeleteAccountAsync(int id)
         {
             try

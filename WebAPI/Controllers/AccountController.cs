@@ -185,7 +185,26 @@ namespace WebAPI.Controllers
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
-
+        [HttpGet("{email}")]
+        public async Task<IActionResult> GetByEmail(string email)
+        {
+            try
+            {
+                
+                var itemsDto = await _accountService.GetPersonaByEmailDapper(email);
+                return Ok(itemsDto);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetByEmail)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return StatusCode(500, $"Error interno del servidor: {ex.Message}");
+            }
+        }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAccountAsync(int id)
         {
