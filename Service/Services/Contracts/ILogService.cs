@@ -9,7 +9,7 @@ namespace Service.Services.Contracts
 {
     public interface ILogService
     {
-        Task Add(LogDTO logDTO);
+        Task AddAsync(LogDTO logDTO);
         Task<IEnumerable<LogDTO>> GetAll();
         Task<LogDTO> GetById(int id);
     }

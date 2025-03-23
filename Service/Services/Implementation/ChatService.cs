@@ -2,6 +2,7 @@
 using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.GetChats;
+using Domain.ViewModels.GetPropuestasIntercambios;
 using Domain.ViewModels.Response;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -23,67 +24,101 @@ namespace Service.Services.Implementation
     {
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
         private readonly IPropuestaIntercambioService _propuestaIntercambioService;
+        private readonly ILogService _logService;
 
-        private readonly Logger _logger;
-
-        public ChatService(DataBaseContext context, IMapper mapper, Logger logger, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, IPropuestaIntercambioService propuestaIntercambioService) : base(context, mapper, logger)
+        public ChatService(
+            DataBaseContext context, 
+            IMapper mapper, 
+            ILogService logService,
+            Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
+            IPropuestaIntercambioService propuestaIntercambioService) : base(context, mapper, logService)
         {
             _userManager = userManager;
-            _logger = logger;
+            _logService = logService;
             _propuestaIntercambioService = propuestaIntercambioService;
         }
 
         public async Task<EndpointResponse<List<GetChatsVM>>> GetAllByIdUsuario(string idUsuario)
         {
-            if (idUsuario == null)
+            try
             {
+                if (idUsuario == null)
+                {
+                    return new EndpointResponse<List<GetChatsVM>>
+                    {
+                        Message = "El id es requerido",
+                        Success = false,
+                        Data = new List<GetChatsVM>()
+                    };
+                }
+
+                var result = await _context.Chats
+                    .Where(x => (x.IdUsuario1 == idUsuario || x.IdUsuario2 == idUsuario) && !x.EsBorrado)
+                    .ToListAsync();
+
+                if (!result.Any())
+                {
+                    return new EndpointResponse<List<GetChatsVM>>
+                    {
+                        Message = "No se encontraron chats con ese usuario",
+                        Success = false,
+                        Data = new List<GetChatsVM>()
+                    };
+                }
+                var chatDTOs = new List<GetChatsVM>();
+
+                foreach (var chat in result)
+                {
+                    var personaEmisor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario1);
+                    var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario2);
+                    var propuestasIntercambios = await _context.PropuestasIntercambios.FirstOrDefaultAsync(p => p.Id == chat.IdPropuestaIntercambio);
+                    var personaOfertante = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestasIntercambios.IdUsuarioOfertante);
+                    var personaReceptorPropuesta = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == propuestasIntercambios.IdUsuarioReceptor);
+                    var objetoOfertado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestasIntercambios.IdObjetoOfertado);
+                    var objetoSolicitado = await _context.Objetos.FirstOrDefaultAsync(p => p.Id == propuestasIntercambios.IdObjetoSolicitado);
+
+                    chatDTOs.Add(new GetChatsVM
+                    {
+                        Id = chat.Id,
+                        IdUsuario1 = chat.IdUsuario1,
+                        PersonaEmisor = personaEmisor,
+                        IdUsuario2 = chat.IdUsuario2,
+                        PersonaReceptor = personaReceptor,
+                        IdPropuestaIntercambio = chat.IdPropuestaIntercambio,
+                        PropuestaIntercambio = new PropuestasIntercambiosVM
+                        {
+                            Id = propuestasIntercambios.Id,
+                            IdUsuarioOfertante = propuestasIntercambios.IdUsuarioOfertante,
+                            PersonaOfertante = personaEmisor,
+                            IdUsuarioReceptor = propuestasIntercambios.IdUsuarioReceptor,
+                            PersonaReceptor = personaReceptorPropuesta,
+                            IdObjetoOfertado = propuestasIntercambios.IdObjetoOfertado,
+                            ObjetoOfertado = objetoOfertado,
+                            IdObjetoSolicitado = propuestasIntercambios.IdObjetoSolicitado,
+                            ObjetoSolicitado = objetoSolicitado,
+                            FechaPropuesta = propuestasIntercambios.FechaPropuesta,
+                            Estado = propuestasIntercambios.Estado,
+                        }
+                    });
+                }
+
                 return new EndpointResponse<List<GetChatsVM>>
                 {
-                    Message = "El id es requerido",
-                    Success = false,
-                    Data = new List<GetChatsVM>()
+                    Message = "Chats obtenidos con éxito",
+                    Success = true,
+                    Data = chatDTOs
                 };
             }
-
-            var result = await _context.Chats
-                .Where(x => (x.IdUsuario1 == idUsuario || x.IdUsuario2 == idUsuario) && !x.EsBorrado)
-                .ToListAsync();
-
-            if (!result.Any())
+            catch (Exception ex)
             {
-                return new EndpointResponse<List<GetChatsVM>>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = "No se encontraron chats con ese usuario",
-                    Success = false,
-                    Data = new List<GetChatsVM>()
-                };
-            }
-            var chatDTOs = new List<GetChatsVM>();
-
-            foreach (var chat in result)
-            {
-                var personaEmisor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario1);
-                var personaReceptor = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == chat.IdUsuario2);
-                var propuestasIntercambios = await _context.PropuestasIntercambios.FirstOrDefaultAsync(p => p.Id == chat.IdPropuestaIntercambio);
-
-                chatDTOs.Add(new GetChatsVM
-                {
-                    Id = chat.Id,
-                    IdUsuario1 = chat.IdUsuario1,
-                    PersonaEmisor = personaEmisor,
-                    IdUsuario2 = chat.IdUsuario2,
-                    PersonaReceptor = personaReceptor,
-                    IdPropuestaIntercambio = chat.IdPropuestaIntercambio,
-                    PropuestaIntercambio = propuestasIntercambios
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllByIdUsuario)}, de la clase {nameof(ChatService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
                 });
+                throw;
             }
-
-            return new EndpointResponse<List<GetChatsVM>>
-            {
-                Message = "Chats obtenidos con éxito",
-                Success = true,
-                Data = chatDTOs
-            };
         }
 
         public async Task CloseChat(int idChat, bool isSuccess)
@@ -101,13 +136,57 @@ namespace Service.Services.Implementation
                 // mando a hacer el cambio de estatus de la propuesta y objetos
                 await _propuestaIntercambioService.ChangeStatus(idPropuestaIntercambio, estatus);
 
+                if (isSuccess)
+                {
+                    var propuesta = await _context.PropuestasIntercambios.FirstOrDefaultAsync(p => p.Id == idPropuestaIntercambio);
+
+                    if (propuesta == null)
+                        return;
+
+                    var propuestas = await _context.PropuestasIntercambios
+                        .Where(p =>
+                            p.IdObjetoSolicitado == propuesta.IdObjetoSolicitado ||
+                            p.IdObjetoSolicitado == propuesta.IdObjetoOfertado ||
+                            p.IdObjetoOfertado == propuesta.IdObjetoSolicitado ||
+                            p.IdObjetoOfertado == propuesta.IdObjetoOfertado)
+                        .ToListAsync();
+
+                    List<Chat> chats = new List<Chat>();
+
+                    foreach (var prop in propuestas)
+                    {
+                        Chat chatData = await _context.Chats.FirstOrDefaultAsync(c => c.IdPropuestaIntercambio == prop.Id);
+                        if (chatData != null)
+                        {
+                            chats.Add(chatData);
+                        }
+                        prop.Estado = EstatusPropuestaIntercambio.RECHAZADA;
+                        prop.EsBorrado = true;
+                        _context.PropuestasIntercambios.Update(prop);
+                    }
+
+                    foreach (var chatItem in chats)
+                    {
+                        chatItem.EsBorrado = true;
+                        _context.Update(chatItem);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
+
                 chat.EsBorrado = true;
                 _dbSet.Update(chat);
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                await _logger.LogAsync("Error", "Error al actualizar el elemento", ex.ToString());
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CloseChat)}, de la clase {nameof(ChatService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 throw new Exception("Error al actualizar el elemento", ex);
             }
         }

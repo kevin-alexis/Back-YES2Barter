@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using Domain.DTOs;
 using Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Repository.Context;
 using Service.Services.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,14 +19,17 @@ namespace Service.Services.Implementation
         private readonly DataBaseContext _context;
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
         private readonly IMapper _mapper;
-        public LogService(DataBaseContext context, IMapper mapper, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public LogService(DataBaseContext context, IMapper mapper, Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _userManager = userManager;
             _mapper = mapper;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        virtual public async Task<IEnumerable<LogDTO>> GetAll()
+        public async Task<IEnumerable<LogDTO>> GetAll()
         {
             try
             {
@@ -37,10 +42,70 @@ namespace Service.Services.Implementation
             }
         }
 
-        virtual public async Task Add(LogDTO logDTO)
+        public async Task AddAsync(LogDTO logDTO)
         {
             try
             {
+                logDTO.Fecha = DateTime.Now;
+
+                if(logDTO.Fuente == null)
+                {
+                    string ip = _httpContextAccessor.HttpContext.Request.Host.ToString();
+                    logDTO.Fuente = $"Back-End: {ip}";
+                }
+
+                if (!string.IsNullOrEmpty(logDTO.Excepcion))
+                {
+                    if (logDTO.Excepcion.Contains("NullReferenceException"))
+                    {
+                        logDTO.Nivel = "Error";
+                    }
+                    else if (logDTO.Excepcion.Contains("ArgumentException"))
+                    {
+                        logDTO.Nivel = "Warning";
+                    }
+                    else if (logDTO.Excepcion.Contains("InvalidOperationException"))
+                    {
+                        logDTO.Nivel = "Error";
+                    }
+                    else if (logDTO.Excepcion.Contains("OutOfMemoryException") ||
+                             logDTO.Excepcion.Contains("AccessViolationException") ||
+                             logDTO.Excepcion.Contains("StackOverflowException"))
+                    {
+                        logDTO.Nivel = "Critical";
+                    }
+                    else if (logDTO.Excepcion.Contains("Request failed with status code 404"))
+                    {
+                        logDTO.Nivel = "Warning";
+                    }
+                    else if (logDTO.Excepcion.Contains("A second operation was started on this context instance"))
+                    {
+                        logDTO.Nivel = "Critical";
+                    }
+                    else if (logDTO.Excepcion.Contains("Cannot read properties of undefined"))
+                    {
+                        logDTO.Nivel = "Warning";
+                    }
+                    else if (logDTO.Excepcion.Contains("Cannot read properties of undefined (reading 'data')"))
+                    {
+                        logDTO.Nivel = "Warning";
+                    }
+                    else if (logDTO.Excepcion.Contains("System.InvalidOperationException"))
+                    {
+                        logDTO.Nivel = "Error"; 
+                    }
+                    else
+                    {
+                        logDTO.Nivel = "Info";
+                    }
+                }
+                else
+                {
+                    logDTO.Nivel = "Info";
+                }
+
+
+
                 var item = _mapper.Map<Log>(logDTO);
                 await _context.Logs.AddAsync(item);
                 await _context.SaveChangesAsync();
@@ -51,7 +116,7 @@ namespace Service.Services.Implementation
             }
         }
 
-        virtual public async Task<LogDTO> GetById(int id)
+        public async Task<LogDTO> GetById(int id)
         {
             try
             {

@@ -9,16 +9,67 @@ using Service.Logging;
 using Domain.ViewModels.Response;
 using System.IdentityModel.Tokens.Jwt;
 using static Domain.Enumerations.Enums;
+using Domain.ViewModels.EditPersona;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Service.Services.Implementation
 {
     public class PersonaService : BaseService<Persona, PersonaDTO>, IPersonaService
     {
         private readonly Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> _userManager;
+        private readonly ILogService _logService;
         public PersonaService(Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager,
-           DataBaseContext context, IMapper mapper, Logger logger) : base(context, mapper, logger)
+           DataBaseContext context, IMapper mapper, ILogService logService) : base(context, mapper, logService)
         {
             _userManager = userManager;
+            _logService = logService;
+        }
+
+        public async Task<IEnumerable<PersonaDTO>> GetAllPersonasIntercambiadores()
+        {
+            try
+            {
+                var items = await _context.Personas.Where(
+                    x => _context.UserRoles
+                        .Any(ur => ur.UserId == x.Usuario.Id && ur.RoleId == _context.Roles
+                            .Where(r => r.NormalizedName == "INTERCAMBIADOR")
+                            .Select(r => r.Id)
+                            .FirstOrDefault()
+                            ) && x.EsBorrado == false).ToListAsync();
+                return _mapper.Map<IEnumerable<PersonaDTO>>(items);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdEf)}, de la clase {nameof(PersonaService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                }); throw new Exception("Error al obtener todos los elementos", ex);
+            }
+        }
+
+        public async Task<PersonaDTO> GetPersonaByIdUsuario(string idUsuario)
+        {
+            try
+            {
+                var item = await _dbSet.Where(e => e.IdUsuario == idUsuario && !e.EsBorrado).FirstOrDefaultAsync();
+                if (item != null)
+                {
+                    return _mapper.Map<PersonaDTO>(item);
+                }
+                return default(PersonaDTO);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdUsuario)}, de la clase {nameof(PersonaService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw new Exception($"Error al obtener el elemento con idUsuario {idUsuario}", ex);
+            }
         }
 
         // Obtener Persona por Id usando Entity Framework
@@ -35,6 +86,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdEf)}, de la clase {nameof(PersonaService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 throw new Exception($"Error al obtener el elemento con id {id}", ex);
             }
         }
@@ -58,8 +115,30 @@ namespace Service.Services.Implementation
 
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetPersonaByIdDapper)}, de la clase {nameof(PersonaService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 throw new Exception($"Error al obtener el elemento con id {id}", ex);
             }
         }
+        public async Task<PersonaDTO> UpdatePersona(int id, PersonaDTO personaDto)
+        {
+            var persona = await _context.Personas.FindAsync(id);
+            if (persona == null)
+                return null;
+
+            persona.Nombre = personaDto.Nombre;
+            persona.Biografia = personaDto.Biografia;
+            if (!string.IsNullOrEmpty(personaDto.RutaFotoPerfil))
+                persona.RutaFotoPerfil = personaDto.RutaFotoPerfil;
+            _context.Personas.Update(persona);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<PersonaDTO>(persona);
+        }
+
     }
+
 }

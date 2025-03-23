@@ -6,7 +6,11 @@ namespace Service.Services.Contracts
 {
     public interface IPersonaService : IBaseService<Persona, PersonaDTO>
     {
+        Task<IEnumerable<PersonaDTO>> GetAllPersonasIntercambiadores();
         Task<PersonaDTO> GetPersonaByIdDapper(int id);
         Task<PersonaDTO> GetPersonaByIdEf(int id);
+        Task<PersonaDTO> GetPersonaByIdUsuario(string idUsuario);
+        Task<PersonaDTO> UpdatePersona(int id, PersonaDTO personaDto);
+
     }
 }

@@ -1,19 +1,24 @@
 ﻿using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using Domain.DTOs;
 using Domain.Entities;
 using Domain.ViewModels.Account;
+using Domain.ViewModels.CloseChat;
 using Domain.ViewModels.CreateAccountVM;
 using Domain.ViewModels.Login;
 using Domain.ViewModels.Response;
 using Domain.ViewModels.UpdateAccountVM;
 using global::Service.Services.Contracts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Repository.Context;
+using Repository.Migrations;
 
 namespace Service.Services.Implementation
 {
@@ -25,12 +30,17 @@ namespace Service.Services.Implementation
         private readonly IConfiguration _configuration;
         private readonly DataBaseContext _context;
         private readonly string _connectionString;
+        private readonly ILogService _logService;
+        private readonly IHttpContextAccessor _httpContextAccesor;
         public AccountService(
             Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
             Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, 
             SignInManager<ApplicationUser> signInManager, 
             IConfiguration configuration,
-            DataBaseContext context)
+            DataBaseContext context,
+            ILogService logService,
+            IHttpContextAccessor httpContextAccessor
+            )
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -38,52 +48,142 @@ namespace Service.Services.Implementation
             _configuration = configuration;
             _context = context;
             _connectionString = _context.Database.GetConnectionString();
+            _logService = logService;
+            _httpContextAccesor = httpContextAccessor;
         }
+
+        public async Task<LoginResponseVM> LogOut(string refreshToken)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+
+                if (user != null)
+                {
+                    user.RefreshToken = null;
+                    await _context.SaveChangesAsync();
+                }
+
+                    return new LoginResponseVM { Message = "Cierre de sesión exitoso", Success = true };
+                
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(LogOut)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
 
         public async Task<LoginResponseVM> LoginAsync(LoginVM loginVM)
         {
-            var user = await _userManager.FindByEmailAsync(loginVM.Email);
-            if (user == null)
+            try
             {
-                return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
-            }
+                var user = await _userManager.FindByEmailAsync(loginVM.Email);
+                if (user == null)
+                {
+                    return new LoginResponseVM { Message = "Usuario o contraseña incorrectos", Success = false };
+                }
 
-            var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: false);
-            if (result.Succeeded)
+                var result = await _signInManager.PasswordSignInAsync(user, loginVM.Password, loginVM.RememberMe, lockoutOnFailure: false);
+                if (result.Succeeded)
+                {
+                    var token = await GenerateJwtToken(user, loginVM.RememberMe);
+                    var refreshToken = await GenerateRefreshTokenAsync();
+
+                    user.RefreshToken = refreshToken;
+                    user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+                    await _userManager.UpdateAsync(user);
+                    var cookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        //SameSite = SameSiteMode.Lax,
+                        //SameSite = SameSiteMode.None,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = loginVM.RememberMe ? DateTime.Now.AddDays(7) : DateTime.Now.AddMinutes(120),
+                        Path = "/",
+                        //Domain = "localhost"
+                    };  
+                    //_httpContextAccesor.HttpContext.Response.Cookies.Append("accessToken", token, cookieOptions);
+
+                    var refreshTokenOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        //SameSite = SameSiteMode.Lax,
+                        //SameSite = SameSiteMode.None,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTime.Now.AddDays(7),
+                        Path = "/",
+                        //Domain = "localhost"
+                    };
+                    //_httpContextAccesor.HttpContext.Response.Cookies.Append("refreshToken", refreshToken, refreshTokenOptions);
+                    return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, RefreshToken = refreshToken, Success = true };
+                }
+
+                return new LoginResponseVM { Message = "Usuario o contraseña incorrectos", Success = false };
+            }
+            catch (Exception ex)
             {
-                var token = await GenerateJwtToken(user);
-                return new LoginResponseVM { Message = "Inicio de sesión exitoso", Token = token, Success = true };
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(LoginAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
             }
-
-            return new LoginResponseVM { Message = "Usuario o contraseña incorrectos" };
         }
 
-        private async Task<string> GenerateJwtToken(ApplicationUser user)
+        private async Task<string> GenerateJwtToken(ApplicationUser user, bool rememberMe)
         {
-            var roles = await _userManager.GetRolesAsync(user);
-            var claims = new List<Claim>
+            try
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim("RememberMe", rememberMe.ToString()),
                 new Claim("uid", user.Id.ToString())
             };
 
-            // Agregar el rol a los claims
-            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+                // Agregar el rol a los claims
+                claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(3000),
-                signingCredentials: creds);
+                //Expiración del token con "Remember Me"
+                var tokenExpiration = rememberMe ? DateTime.Now.AddDays(6) : DateTime.Now.AddMinutes(120);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+                var token = new JwtSecurityToken(
+                    issuer: _configuration["Jwt:Issuer"],
+                    audience: _configuration["Jwt:Audience"],
+                    claims: claims,
+                    expires: tokenExpiration,
+                    signingCredentials: creds);
+
+                return new JwtSecurityTokenHandler().WriteToken(token);
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GenerateJwtToken)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         public async Task<LoginResponseVM> ValidateJwtToken(string token)
@@ -109,22 +209,155 @@ namespace Service.Services.Implementation
                     return new LoginResponseVM { Message = "Token Invalido" };
                 }
 
+                var rememberMe = principal.FindFirst("RememberMe")?.Value;
                 var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var user = await _userManager.FindByIdAsync(userId);
-                return new LoginResponseVM { Message = "Token Valido", Token = token, Success = true };
+
+                return new LoginResponseVM { Message = rememberMe == "True" ? "Token válido (Con rememberMe)" : "Token válido (Sin rememberMe)", Token = token, Success = true };
             }
-            catch
+            catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ValidateJwtToken)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new LoginResponseVM { Message = "Token Invalido" };
+            }
+        }
+
+        public async Task<string> GenerateRefreshTokenAsync()
+        {
+            try
+            {
+                var randomNumber = new byte[32];
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(randomNumber);
+                }
+                return Convert.ToBase64String(randomNumber)
+                      .Replace('+', '-')
+                      .Replace('/', '_')
+                      .TrimEnd('=');
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GenerateRefreshTokenAsync)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
+        public async Task<LoginResponseVM> RefreshAccessTokenAsync(string refreshToken)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(refreshToken))
+                {
+                    return new LoginResponseVM { Message = "El refresh token es requerido." };
+                }
+
+                var decodedRefreshToken = Uri.UnescapeDataString(refreshToken);
+
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == decodedRefreshToken);
+
+                if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                {
+                    return new LoginResponseVM { Message = "Refresh token inválido o expirado." };
+                }
+
+                //genera un nuevo accesToken y refreshToken
+                var newToken = await GenerateJwtToken(user, true);
+                var newRefreshToken = await GenerateRefreshTokenAsync();
+
+                //se guarda el nuevo refreshToken
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
+                var updateResult = await _userManager.UpdateAsync(user);
+
+                if (!updateResult.Succeeded)
+                {
+                    return new LoginResponseVM { Message = "Error al actualizar el usuario, intenta nuevamente." };
+                }
+
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    //SameSite = SameSiteMode.Lax,
+                    //SameSite = SameSiteMode.None,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.Now.AddDays(7),
+                    Path = "/",
+                    //Domain = "localhost"
+                };
+                _httpContextAccesor.HttpContext?.Response.Cookies.Append("access_token", newToken, cookieOptions);
+                _httpContextAccesor.HttpContext?.Response.Cookies.Append("refresh_token", newRefreshToken, cookieOptions);
+
+                return new LoginResponseVM
+                {
+                    Message = "Token renovado correctamente",
+                    Token = newToken,
+                    RefreshToken = newRefreshToken,
+                    Success = true
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(RefreshAccessTokenAsync)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
+        public async Task<bool> ValidateRefreshTokenAsync(string refreshToken)
+        {
+            try
+            {
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+                return user != null && user.RefreshTokenExpiryTime > DateTime.Now;
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ValidateRefreshTokenAsync)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                return false;
             }
         }
 
         public async Task<List<IdentityRole>> GetAllRoles()
         {
-            List<IdentityRole> roles = new List<IdentityRole>();
+            try
+            {
+                List<IdentityRole> roles = new List<IdentityRole>();
 
-            roles = await _roleManager.Roles.ToListAsync();
-            return roles;
+                roles = await _roleManager.Roles.ToListAsync();
+                return roles;
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllRoles)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
         }
 
         public async Task<EndpointResponse<string>> CreateAccountAsync(CreateAccountVM createAccountVM)
@@ -142,6 +375,8 @@ namespace Service.Services.Implementation
                 {
                     Nombre = createAccountVM.Nombre,
                     IdUsuario = result.Data,
+                    RutaFotoPerfil = "Uploads\\FotoPerfil\\FotoPerfilDefecto.png",
+                    Biografia = "",
                     EsBorrado = false
                 };
 
@@ -159,6 +394,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CreateAccountAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
@@ -205,6 +446,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(CreateUserAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
@@ -292,6 +539,12 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(UpdateAccountAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
@@ -345,68 +598,83 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
-                return new EndpointResponse<List<AccountVM>>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = $"Error inesperado: {ex.Message}",
-                    Success = false,
-                    Data = null
-                };
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetAllAccounts)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+
             }
         }
 
         public async Task<EndpointResponse<AccountVM>> GetById(int idPersona)
         {
-            if (idPersona <= 0)
+            try
             {
+                if (idPersona <= 0)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "El id es requerido",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var result = await _context.Personas
+                    .Include(x => x.Usuario)
+                    .FirstOrDefaultAsync(x => x.Id == idPersona && x.EsBorrado == false);
+
+                if (result == null)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "No se encontró la cuenta con ese id",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var roles = await _userManager.GetRolesAsync(result.Usuario);
+
+                var userRole = roles.FirstOrDefault();
+                var roleId = string.Empty;
+
+                if (userRole != null)
+                {
+                    var role = await _roleManager.FindByNameAsync(userRole);
+                    roleId = role?.Id;
+                }
+
+                var accountVM = new AccountVM
+                {
+                    IdPersona = result.Id.ToString(),
+                    Nombre = result.Nombre,
+                    Email = result.Usuario.Email,
+                    IdUsuario = result.Usuario.Id.ToString(),
+                    Rol = userRole ?? "No Role",
+                    IdRol = roleId ?? "No Role Id"
+                };
+
                 return new EndpointResponse<AccountVM>
                 {
-                    Message = "El id es requerido",
-                    Success = false,
-                    Data = new AccountVM()
+                    Message = "Cuenta obtenida con éxito",
+                    Success = true,
+                    Data = accountVM
                 };
             }
-
-            var result = await _context.Personas
-                .Include(x => x.Usuario)
-                .FirstOrDefaultAsync(x => x.Id == idPersona && x.EsBorrado == false);
-
-            if (result == null)
+            catch (Exception ex)
             {
-                return new EndpointResponse<AccountVM>
+                await _logService.AddAsync(new LogDTO
                 {
-                    Message = "No se encontró la cuenta con ese id",
-                    Success = false,
-                    Data = new AccountVM()
-                };
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetById)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
             }
-
-            var roles = await _userManager.GetRolesAsync(result.Usuario);
-
-            var userRole = roles.FirstOrDefault();
-            var roleId = string.Empty;
-
-            if (userRole != null)
-            {
-                var role = await _roleManager.FindByNameAsync(userRole);
-                roleId = role?.Id; 
-            }
-
-            var accountVM = new AccountVM
-            {
-                IdPersona = result.Id.ToString(),
-                Nombre = result.Nombre,
-                Email = result.Usuario.Email,
-                IdUsuario = result.Usuario.Id.ToString(),
-                Rol = userRole ?? "No Role",
-                IdRol = roleId ?? "No Role Id"
-            };
-
-            return new EndpointResponse<AccountVM>
-            {
-                Message = "Cuenta obtenida con éxito",
-                Success = true,
-                Data = accountVM
-            };
         }
 
         public async Task<EndpointResponse<string>> DeleteAccountAsync(int id)
@@ -435,9 +703,81 @@ namespace Service.Services.Implementation
             }
             catch (Exception ex)
             {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(DeleteAccountAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
                 return new EndpointResponse<string>() { Message = $"Error inesperado: {ex.Message}", Success = false, Data = null };
             }
         }
 
+        public async Task<EndpointResponse<AccountVM>> GetCurrentUser(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "El ID del usuario es requerido",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var result = await _context.Personas
+                    .Include(x => x.Usuario)
+                    .FirstOrDefaultAsync(x => x.Usuario.Id == userId && x.EsBorrado == false);
+
+                if (result == null)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "No se encontró la cuenta del usuario autenticado",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                var roles = await _userManager.GetRolesAsync(result.Usuario);
+                var userRole = roles.FirstOrDefault();
+                var roleId = string.Empty;
+
+                if (userRole != null)
+                {
+                    var role = await _roleManager.FindByNameAsync(userRole);
+                    roleId = role?.Id;
+                }
+
+                var accountVM = new AccountVM
+                {
+                    IdPersona = result.Id.ToString(),
+                    Nombre = result.Nombre,
+                    Email = result.Usuario.Email,
+                    IdUsuario = result.Usuario.Id.ToString(),
+                    Rol = userRole ?? "No Role",
+                    IdRol = roleId ?? "No Role Id"
+                };
+
+                return new EndpointResponse<AccountVM>
+                {
+                    Message = "Cuenta obtenida con éxito",
+                    Success = true,
+                    Data = accountVM
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetCurrentUser)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
     }
 }

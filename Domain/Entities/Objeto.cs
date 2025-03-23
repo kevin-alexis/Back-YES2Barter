@@ -22,6 +22,9 @@ namespace Domain.Entities
         public virtual Categoria Categoria { get; set; }
 
         public EstatusObjeto Estado {  get; set; }
+        [ForeignKey(nameof(Usuario))]
+        public string IdUsuario { get; set; }
+        public virtual ApplicationUser Usuario { get; set; }
 
     }
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Repository.Migrations
 {
     /// <inheritdoc />
-    public partial class M1_09_03_2025 : Migration
+    public partial class M1_10_03_2025 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -221,11 +221,18 @@ namespace Repository.Migrations
                     RutaImagen = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IdCategoria = table.Column<int>(type: "int", nullable: false),
                     Estado = table.Column<int>(type: "int", nullable: false),
+                    IdUsuario = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     EsBorrado = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tbl_Objetos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Tbl_Objetos_AspNetUsers_IdUsuario",
+                        column: x => x.IdUsuario,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Tbl_Objetos_Tbl_Categorias_IdCategoria",
                         column: x => x.IdCategoria,
@@ -422,6 +429,11 @@ namespace Repository.Migrations
                 column: "IdCategoria");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Tbl_Objetos_IdUsuario",
+                table: "Tbl_Objetos",
+                column: "IdUsuario");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Tbl_Personas_IdUsuario",
                 table: "Tbl_Personas",
                 column: "IdUsuario");
@@ -484,10 +496,10 @@ namespace Repository.Migrations
                 name: "Tbl_PropuestasIntercambios");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Tbl_Objetos");
 
             migrationBuilder.DropTable(
-                name: "Tbl_Objetos");
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Tbl_Categorias");
