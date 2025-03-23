@@ -133,6 +133,7 @@ namespace Service.Services.Implementation
                 }
                 var idPropuestaIntercambio = chat.IdPropuestaIntercambio;
                 var estatus = isSuccess ? EstatusPropuestaIntercambio.CONCRETADA : EstatusPropuestaIntercambio.NO_CONCRETADA;
+                
                 // mando a hacer el cambio de estatus de la propuesta y objetos
                 await _propuestaIntercambioService.ChangeStatus(idPropuestaIntercambio, estatus);
 
