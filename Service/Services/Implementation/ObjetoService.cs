@@ -235,6 +235,7 @@ namespace Service.Services.Implementation
                     Id = objeto.Id,
                     Nombre = objeto.Nombre,
                     Descripcion = objeto.Descripcion,
+                    IdUsuario = objeto.IdUsuario,
                     FechaPublicacion = objeto.FechaPublicacion,
                     RutaImagen = objeto.RutaImagen,
                     Estado = objeto.Estado,

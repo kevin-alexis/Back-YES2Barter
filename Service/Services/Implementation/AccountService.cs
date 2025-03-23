@@ -677,11 +677,11 @@ namespace Service.Services.Implementation
             }
         }
 
-        public async Task<EndpointResponse<string>> DeleteAccountAsync(int id)
+        public async Task<EndpointResponse<string>> DeleteAccountAsync(string id)
         {
             try
             {
-                var person = await _context.Personas.FirstOrDefaultAsync(p => p.Id == id);
+                var person = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == id);
                 var user = await _userManager.FindByIdAsync(person.IdUsuario);
                 
                 if (user == null)

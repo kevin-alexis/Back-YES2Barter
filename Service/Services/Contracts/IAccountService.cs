@@ -20,7 +20,7 @@ namespace Service.Services.Contracts
         Task<LoginResponseVM> LoginAsync(LoginVM loginVM);
         Task<LoginResponseVM> ValidateJwtToken(string token);
         Task<EndpointResponse<string>> CreateAccountAsync(CreateAccountVM createAccountVM);
-        Task<EndpointResponse<string>> DeleteAccountAsync(int id);
+        Task<EndpointResponse<string>> DeleteAccountAsync(string id);
         Task<EndpointResponse<List<AccountVM>>> GetAllAccounts();
         Task<EndpointResponse<string>> UpdateAccountAsync(UpdateAccountVM updateAccountVM, int IdPersona);
         Task<EndpointResponse<AccountVM>> GetById(int idPersona);
