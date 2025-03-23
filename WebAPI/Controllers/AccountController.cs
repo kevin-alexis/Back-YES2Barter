@@ -187,7 +187,7 @@ namespace WebAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAccountAsync(int id)
+        public async Task<IActionResult> DeleteAccountAsync(string id)
         {
             try
             {
