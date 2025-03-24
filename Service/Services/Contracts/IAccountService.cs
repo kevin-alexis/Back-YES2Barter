@@ -1,4 +1,5 @@
-﻿using Domain.ViewModels.Account;
+﻿using Domain.DTOs;
+using Domain.ViewModels.Account;
 using Domain.ViewModels.CreateAccountVM;
 using Domain.ViewModels.Login;
 using Domain.ViewModels.Response;
@@ -11,6 +12,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace Service.Services.Contracts
 {
@@ -29,5 +31,9 @@ namespace Service.Services.Contracts
         Task<bool> ValidateRefreshTokenAsync(string refreshToken);
         Task<EndpointResponse<AccountVM>> GetCurrentUser(string userId);
         Task<LoginResponseVM> LogOut(string refreshToken);
+        Task<ForgotPasswordResponseVM> FindUserByEmailAsync(string email);
+        Task<ResetPasswordResponseVM> ResetPasswordAsync(ResetPasswordVM model);
+
+
     }
 }

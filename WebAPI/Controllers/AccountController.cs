@@ -185,7 +185,7 @@ namespace WebAPI.Controllers
                 return StatusCode(500, $"Error interno del servidor: {ex.Message}");
             }
         }
-
+       
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAccountAsync(string id)
         {
@@ -309,6 +309,29 @@ namespace WebAPI.Controllers
             if (!response.Success)
             {
                 return Ok(response);
+            }
+
+            return Ok(response);
+        }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordVM forgotPasswordVM)
+        {
+            var response = await _accountService.FindUserByEmailAsync(forgotPasswordVM.Email);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordVM model)
+        {
+            var response = await _accountService.ResetPasswordAsync(model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
             }
 
             return Ok(response);

@@ -122,6 +122,8 @@ namespace WebAPI.Controllers
             }
         }
 
+
+
         // Endpoint para actualizar el perfil (incluyendo el cambio de foto)
         [HttpPut("UpdatePerfil/{id}")]
         public async Task<IActionResult> UpdatePerfil(int id, [FromForm] EditPersonaVM editPersona)

@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,6 +33,8 @@ namespace Service.Services.Implementation
         private readonly string _connectionString;
         private readonly ILogService _logService;
         private readonly IHttpContextAccessor _httpContextAccesor;
+        private readonly IEmailService _emailService;
+
         public AccountService(
             Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
             Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, 
@@ -39,7 +42,8 @@ namespace Service.Services.Implementation
             IConfiguration configuration,
             DataBaseContext context,
             ILogService logService,
-            IHttpContextAccessor httpContextAccessor
+            IHttpContextAccessor httpContextAccessor,
+            IEmailService emailService
             )
         {
             _userManager = userManager;
@@ -50,6 +54,7 @@ namespace Service.Services.Implementation
             _connectionString = _context.Database.GetConnectionString();
             _logService = logService;
             _httpContextAccesor = httpContextAccessor;
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         }
 
         public async Task<LoginResponseVM> LogOut(string refreshToken)
@@ -677,7 +682,79 @@ namespace Service.Services.Implementation
             }
         }
 
-        public async Task<EndpointResponse<string>> DeleteAccountAsync(string id)
+        public async Task<EndpointResponse<AccountVM>> GetByEmail(string email)
+        {
+            try
+            {
+                // Validar que el email no esté vacío o sea nulo
+                if (string.IsNullOrEmpty(email))
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "El email es requerido",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                // Buscar la persona por email y que no esté marcada como borrada
+                var result = await _context.Personas
+                    .Include(x => x.Usuario)
+                    .FirstOrDefaultAsync(x => x.Usuario.Email == email && x.EsBorrado == false);
+
+                if (result == null)
+                {
+                    return new EndpointResponse<AccountVM>
+                    {
+                        Message = "No se encontró la cuenta con ese email",
+                        Success = false,
+                        Data = new AccountVM()
+                    };
+                }
+
+                // Obtener los roles del usuario
+                var roles = await _userManager.GetRolesAsync(result.Usuario);
+
+                var userRole = roles.FirstOrDefault();
+                var roleId = string.Empty;
+
+                if (userRole != null)
+                {
+                    var role = await _roleManager.FindByNameAsync(userRole);
+                    roleId = role?.Id;
+                }
+
+                // Mapear los datos a AccountVM
+                var accountVM = new AccountVM
+                {
+                    IdPersona = result.Id.ToString(),
+                    Nombre = result.Nombre,
+                    Email = result.Usuario.Email,
+                    IdUsuario = result.Usuario.Id.ToString(),
+                    Rol = userRole ?? "No Role",
+                    IdRol = roleId ?? "No Role Id"
+                };
+
+                return new EndpointResponse<AccountVM>
+                {
+                    Message = "Cuenta obtenida con éxito",
+                    Success = true,
+                    Data = accountVM
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(GetByEmail)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
+        public async Task<EndpointResponse<string>> DeleteAccountAsync(int id)
         {
             try
             {
@@ -779,5 +856,160 @@ namespace Service.Services.Implementation
                 throw;
             }
         }
+        public async Task<ForgotPasswordResponseVM> FindUserByEmailAsync(string email)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    return new ForgotPasswordResponseVM { Message = "El correo no está registrado", Success = false };
+                }
+
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                var encodedToken = WebUtility.UrlEncode(resetToken);
+                var encodedEmail = WebUtility.UrlEncode(user.Email);
+
+                string resetUrl = $"https://localhost:5173/reset-password?email={encodedEmail}&token={encodedToken}";
+
+                await _emailService.SendEmailAsync(user.Email, "Restablecer contraseña",
+                    $@"<!DOCTYPE html>
+                    <html lang='es'>
+                        <head>
+                        <meta charset='UTF-8'>
+                        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                        <title>Restablecer Contraseña</title>
+                        <style>
+                        body {{
+                                font-family: Arial, sans-serif;
+                                background-color: #f3f9f3;
+                                color: #333;
+                                margin: 0;
+                                padding: 0;
+                                }}
+                                .container {{
+                                    max-width: 500px;
+                                    margin: 20px auto;
+                                    background: #ffffff;
+                                    padding: 20px;
+                                    border-radius: 8px;
+                                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                                    border: 1px solid #d9e2d3;
+                                }}
+                                .header {{
+                                    text-align: center;
+                                    padding-bottom: 20px;
+                                    border-bottom: 2px solid #a7c5a6;
+                                }}
+                                .header h2 {{
+                                    color: #2e8b57; 
+                                }}
+                                .content {{
+                                    text-align: center;
+                                    padding: 20px 0;
+                                }}
+                                .button {{
+                                    display: inline-block;
+                                    background: #4CAF50; 
+                                    color: white !important; 
+                                    padding: 12px 20px;
+                                    border-radius: 5px;
+                                    text-decoration: none;
+                                    font-size: 16px;
+                                    font-weight: bold;
+                                    margin-top: 10px;
+                                    transition: background-color 0.3s ease;
+                                    text-align: center;
+                                }}
+                                .button:hover {{
+                                    background: #388e3c; 
+                                }}
+                                .footer {{
+                                    text-align: center;
+                                    font-size: 12px;
+                                    color: #666;
+                                    margin-top: 20px;
+                                }}
+                                .footer a {{
+                                    color: #4CAF50; 
+                                    text-decoration: none;
+                                }}
+                                .footer a:hover {{
+                                    text-decoration: underline;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class='container'>
+                                <div class='header'>
+                                    <h2>Solicitud para Restablecer Contraseña</h2>
+                                </div>
+                                <div class='content'>
+                                    <p>Hemos recibido una solicitud para restablecer tu contraseña. Si no realizaste esta solicitud, ignora este mensaje.</p>
+                                    <p>Para cambiar tu contraseña, haz clic en el botón de abajo:</p>
+                                    <a href='{resetUrl}' class='button' style='color: white !important;'>Restablecer Contraseña</a> 
+                                </div>
+                                <div class='footer'>
+                                    <p>Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:</p>
+                                    <p><a href='{resetUrl}'>{resetUrl}</a></p>
+                                    <p>Este enlace expirará en 1 hora.</p>
+                                </div>
+                            </div>
+                        </body>
+                    </html>");
+
+
+
+                return new ForgotPasswordResponseVM
+                {
+                    Message = "Se ha enviado un correo con instrucciones para restablecer la contraseña",
+                    Success = true
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(FindUserByEmailAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
+        public async Task<ResetPasswordResponseVM> ResetPasswordAsync(ResetPasswordVM model)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    return new ResetPasswordResponseVM { Message = "El correo no está registrado", Success = false };
+                }
+
+                var resetResult = await _userManager.ResetPasswordAsync(user, model.ResetToken, model.NewPassword);
+                if (!resetResult.Succeeded)
+                {
+                    var errors = string.Join(", ", resetResult.Errors.Select(e => e.Description));
+                    return new ResetPasswordResponseVM { Message = $"Error al restablecer la contraseña: {errors}", Success = false };
+                }
+
+                return new ResetPasswordResponseVM { Message = "Contraseña restablecida exitosamente", Success = true };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ResetPasswordAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
+
     }
 }
