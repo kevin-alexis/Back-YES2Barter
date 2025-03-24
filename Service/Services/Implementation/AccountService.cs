@@ -874,7 +874,92 @@ namespace Service.Services.Implementation
                 string resetUrl = $"https://localhost:5173/reset-password?email={encodedEmail}&token={encodedToken}";
 
                 await _emailService.SendEmailAsync(user.Email, "Restablecer contraseña",
-                    $"<p>Haga clic en el siguiente enlace para restablecer su contraseña:</p><a href='{resetUrl}'>Restablecer contraseña</a>");
+                    $@"<!DOCTYPE html>
+                    <html lang='es'>
+                        <head>
+                        <meta charset='UTF-8'>
+                        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                        <title>Restablecer Contraseña</title>
+                        <style>
+                        body {{
+                                font-family: Arial, sans-serif;
+                                background-color: #f3f9f3;
+                                color: #333;
+                                margin: 0;
+                                padding: 0;
+                                }}
+                                .container {{
+                                    max-width: 500px;
+                                    margin: 20px auto;
+                                    background: #ffffff;
+                                    padding: 20px;
+                                    border-radius: 8px;
+                                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                                    border: 1px solid #d9e2d3;
+                                }}
+                                .header {{
+                                    text-align: center;
+                                    padding-bottom: 20px;
+                                    border-bottom: 2px solid #a7c5a6;
+                                }}
+                                .header h2 {{
+                                    color: #2e8b57; 
+                                }}
+                                .content {{
+                                    text-align: center;
+                                    padding: 20px 0;
+                                }}
+                                .button {{
+                                    display: inline-block;
+                                    background: #4CAF50; 
+                                    color: white !important; 
+                                    padding: 12px 20px;
+                                    border-radius: 5px;
+                                    text-decoration: none;
+                                    font-size: 16px;
+                                    font-weight: bold;
+                                    margin-top: 10px;
+                                    transition: background-color 0.3s ease;
+                                    text-align: center;
+                                }}
+                                .button:hover {{
+                                    background: #388e3c; 
+                                }}
+                                .footer {{
+                                    text-align: center;
+                                    font-size: 12px;
+                                    color: #666;
+                                    margin-top: 20px;
+                                }}
+                                .footer a {{
+                                    color: #4CAF50; 
+                                    text-decoration: none;
+                                }}
+                                .footer a:hover {{
+                                    text-decoration: underline;
+                                }}
+                            </style>
+                        </head>
+                        <body>
+                            <div class='container'>
+                                <div class='header'>
+                                    <h2>Solicitud para Restablecer Contraseña</h2>
+                                </div>
+                                <div class='content'>
+                                    <p>Hemos recibido una solicitud para restablecer tu contraseña. Si no realizaste esta solicitud, ignora este mensaje.</p>
+                                    <p>Para cambiar tu contraseña, haz clic en el botón de abajo:</p>
+                                    <a href='{resetUrl}' class='button' style='color: white !important;'>Restablecer Contraseña</a> 
+                                </div>
+                                <div class='footer'>
+                                    <p>Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:</p>
+                                    <p><a href='{resetUrl}'>{resetUrl}</a></p>
+                                    <p>Este enlace expirará en 1 hora.</p>
+                                </div>
+                            </div>
+                        </body>
+                    </html>");
+
+
 
                 return new ForgotPasswordResponseVM
                 {
