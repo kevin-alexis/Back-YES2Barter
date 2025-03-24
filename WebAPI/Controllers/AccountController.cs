@@ -324,6 +324,18 @@ namespace WebAPI.Controllers
 
             return Ok(response);
         }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordVM model)
+        {
+            var response = await _accountService.ResetPasswordAsync(model);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
     }
 
 

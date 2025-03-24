@@ -882,6 +882,37 @@ namespace Service.Services.Implementation
                 throw;
             }
         }
+        public async Task<ResetPasswordResponseVM> ResetPasswordAsync(ResetPasswordVM model)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    return new ResetPasswordResponseVM { Message = "El correo no está registrado", Success = false };
+                }
+
+                var resetResult = await _userManager.ResetPasswordAsync(user, model.ResetToken, model.NewPassword);
+                if (!resetResult.Succeeded)
+                {
+                    var errors = string.Join(", ", resetResult.Errors.Select(e => e.Description));
+                    return new ResetPasswordResponseVM { Message = $"Error al restablecer la contraseña: {errors}", Success = false };
+                }
+
+                return new ResetPasswordResponseVM { Message = "Contraseña restablecida exitosamente", Success = true };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(ResetPasswordAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
 
     }
 }
