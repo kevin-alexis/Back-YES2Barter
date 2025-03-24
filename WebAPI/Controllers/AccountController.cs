@@ -313,6 +313,17 @@ namespace WebAPI.Controllers
 
             return Ok(response);
         }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordVM forgotPasswordVM)
+        {
+            var response = await _accountService.FindUserByEmailAsync(forgotPasswordVM.Email);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
     }
 
 

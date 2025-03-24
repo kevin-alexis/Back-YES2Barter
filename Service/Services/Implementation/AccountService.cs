@@ -851,5 +851,37 @@ namespace Service.Services.Implementation
                 throw;
             }
         }
+        public async Task<ForgotPasswordResponseVM> FindUserByEmailAsync(string email)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    return new ForgotPasswordResponseVM { Message = "El correo no está registrado", Success = false };
+                }
+
+                // Aquí puedes generar un token para restablecer la contraseña y enviarlo por correo si lo deseas.
+                var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                return new ForgotPasswordResponseVM
+                {
+                    Message = "Correo encontrado. Se ha generado un token para restablecer la contraseña",
+                    Success = true,
+                    ResetToken = resetToken
+                };
+            }
+            catch (Exception ex)
+            {
+                await _logService.AddAsync(new LogDTO
+                {
+                    Nivel = "Error",
+                    Mensaje = $"Error en el método {nameof(FindUserByEmailAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Excepcion = ex.ToString()
+                });
+                throw;
+            }
+        }
+
     }
 }

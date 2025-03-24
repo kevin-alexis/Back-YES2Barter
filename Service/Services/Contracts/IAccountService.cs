@@ -31,5 +31,7 @@ namespace Service.Services.Contracts
         Task<bool> ValidateRefreshTokenAsync(string refreshToken);
         Task<EndpointResponse<AccountVM>> GetCurrentUser(string userId);
         Task<LoginResponseVM> LogOut(string refreshToken);
+        Task<ForgotPasswordResponseVM> FindUserByEmailAsync(string email);
+
     }
 }
