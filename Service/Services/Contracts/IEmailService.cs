@@ -8,6 +8,6 @@ namespace Service.Services.Contracts
 {
     public interface IEmailService
     {
-        Task SendResetPasswordEmail(string email, string resetLink);
+        Task SendEmailAsync(string to, string subject, string body);
     }
 }

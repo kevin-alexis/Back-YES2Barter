@@ -86,10 +86,12 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Registrar el seeder
 builder.Services.AddTransient<DataBaseSeeder>();
 
-//
+//ToutAll
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // Agregar autenticación JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);

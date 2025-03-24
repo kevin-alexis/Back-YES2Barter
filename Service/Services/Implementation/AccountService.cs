@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,6 +33,8 @@ namespace Service.Services.Implementation
         private readonly string _connectionString;
         private readonly ILogService _logService;
         private readonly IHttpContextAccessor _httpContextAccesor;
+        private readonly IEmailService _emailService;
+
         public AccountService(
             Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> userManager, 
             Microsoft.AspNetCore.Identity.RoleManager<IdentityRole> roleManager, 
@@ -39,7 +42,8 @@ namespace Service.Services.Implementation
             IConfiguration configuration,
             DataBaseContext context,
             ILogService logService,
-            IHttpContextAccessor httpContextAccessor
+            IHttpContextAccessor httpContextAccessor,
+            IEmailService emailService
             )
         {
             _userManager = userManager;
@@ -50,6 +54,7 @@ namespace Service.Services.Implementation
             _connectionString = _context.Database.GetConnectionString();
             _logService = logService;
             _httpContextAccesor = httpContextAccessor;
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         }
 
         public async Task<LoginResponseVM> LogOut(string refreshToken)
@@ -861,14 +866,20 @@ namespace Service.Services.Implementation
                     return new ForgotPasswordResponseVM { Message = "El correo no está registrado", Success = false };
                 }
 
-                // Aquí puedes generar un token para restablecer la contraseña y enviarlo por correo si lo deseas.
                 var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                var encodedToken = WebUtility.UrlEncode(resetToken);
+                var encodedEmail = WebUtility.UrlEncode(user.Email);
+
+                string resetUrl = $"https://localhost:5173/reset-password?email={encodedEmail}&token={encodedToken}";
+
+                await _emailService.SendEmailAsync(user.Email, "Restablecer contraseña",
+                    $"<p>Haga clic en el siguiente enlace para restablecer su contraseña:</p><a href='{resetUrl}'>Restablecer contraseña</a>");
 
                 return new ForgotPasswordResponseVM
                 {
-                    Message = "Correo encontrado. Se ha generado un token para restablecer la contraseña",
-                    Success = true,
-                    ResetToken = resetToken
+                    Message = "Se ha enviado un correo con instrucciones para restablecer la contraseña",
+                    Success = true
                 };
             }
             catch (Exception ex)
@@ -882,6 +893,7 @@ namespace Service.Services.Implementation
                 throw;
             }
         }
+
         public async Task<ResetPasswordResponseVM> ResetPasswordAsync(ResetPasswordVM model)
         {
             try
