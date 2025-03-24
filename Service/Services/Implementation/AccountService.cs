@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -759,8 +760,64 @@ namespace Service.Services.Implementation
             try
             {
                 var person = await _context.Personas.FirstOrDefaultAsync(p => p.IdUsuario == id);
+
+                if (person == null)
+                {
+                    return new EndpointResponse<string> { Message = "La persona no existe", Success = false, Data = null };
+                }
+
+                var chats = await _context.Chats.Where(p => p.IdUsuario1 == id || p.IdUsuario2 == id).ToListAsync();
+
+                if (chats.Any())
+                {
+                    foreach (var chat in chats)
+                    {
+                        var mensajes = await _context.Mensajes.Where(p => p.IdChat == chat.Id).ToListAsync();
+
+                        if (mensajes.Any())
+                        {
+                            _context.Mensajes.RemoveRange(mensajes);
+                        }
+
+                        _context.Chats.Remove(chat);
+                    }
+
+                }
+
+                var propuestas = await _context.PropuestasIntercambios.Where(p => p.IdUsuarioOfertante == id || p.IdUsuarioReceptor == id).ToListAsync();
+
+                if (propuestas.Any())
+                {
+                    foreach (var propuesta in propuestas)
+                    {
+                        var chat = await _context.Chats.FirstOrDefaultAsync(p => p.IdPropuestaIntercambio == propuesta.Id);
+
+                        if (chat != null)
+                        {
+                            var mensajes = await _context.Mensajes.Where(p => p.IdChat == chat.Id).ToListAsync();
+                            if (mensajes.Any()) 
+                            {
+                                _context.Mensajes.RemoveRange(mensajes);
+                            }
+                            _context.Chats.Remove(chat);
+                        }
+                    }
+                    _context.PropuestasIntercambios.RemoveRange(propuestas);
+
+                }
+
+
+
+                var objetos = await _context.Objetos.Where(p => p.IdUsuario == id).ToListAsync();
+
+                if (objetos.Any())
+                {
+                    _context.Objetos.RemoveRange(objetos);
+                }
+
+
                 var user = await _userManager.FindByIdAsync(person.IdUsuario);
-                
+
                 if (user == null)
                 {
                     return new EndpointResponse<string> { Message = "El usuario no existe", Success = false, Data = null };
