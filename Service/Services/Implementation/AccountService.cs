@@ -867,11 +867,12 @@ namespace Service.Services.Implementation
                 }
 
                 var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+                user.RefreshToken = resetToken;
+                await _userManager.UpdateAsync(user);
 
                 var encodedToken = WebUtility.UrlEncode(resetToken);
-                var encodedEmail = WebUtility.UrlEncode(user.Email);
 
-                string resetUrl = $"https://localhost:5173/reset-password?email={encodedEmail}&token={encodedToken}";
+                string resetUrl = $"https://localhost:5173/reset-password?token={encodedToken}";
 
                 await _emailService.SendEmailAsync(user.Email, "Restablecer contraseña",
                     $@"<!DOCTYPE html>
@@ -951,8 +952,6 @@ namespace Service.Services.Implementation
                                     <a href='{resetUrl}' class='button' style='color: white !important;'>Restablecer Contraseña</a> 
                                 </div>
                                 <div class='footer'>
-                                    <p>Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:</p>
-                                    <p><a href='{resetUrl}'>{resetUrl}</a></p>
                                     <p>Este enlace expirará en 1 hora.</p>
                                 </div>
                             </div>
@@ -964,7 +963,7 @@ namespace Service.Services.Implementation
                 return new ForgotPasswordResponseVM
                 {
                     Message = "Se ha enviado un correo con instrucciones para restablecer la contraseña",
-                    Success = true
+                    Success = true,
                 };
             }
             catch (Exception ex)
@@ -983,10 +982,11 @@ namespace Service.Services.Implementation
         {
             try
             {
-                var user = await _userManager.FindByEmailAsync(model.Email);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.RefreshToken == model.ResetToken);
+
                 if (user == null)
                 {
-                    return new ResetPasswordResponseVM { Message = "El correo no está registrado", Success = false };
+                    return new ResetPasswordResponseVM { Message = "El token no es válido o ha expirado", Success = false };
                 }
 
                 var resetResult = await _userManager.ResetPasswordAsync(user, model.ResetToken, model.NewPassword);
@@ -996,6 +996,9 @@ namespace Service.Services.Implementation
                     return new ResetPasswordResponseVM { Message = $"Error al restablecer la contraseña: {errors}", Success = false };
                 }
 
+                user.RefreshToken = null;
+                await _userManager.UpdateAsync(user);
+
                 return new ResetPasswordResponseVM { Message = "Contraseña restablecida exitosamente", Success = true };
             }
             catch (Exception ex)
@@ -1003,12 +1006,13 @@ namespace Service.Services.Implementation
                 await _logService.AddAsync(new LogDTO
                 {
                     Nivel = "Error",
-                    Mensaje = $"Error en el método {nameof(ResetPasswordAsync)}, de la clase {nameof(AccountService)}: {ex.Message}",
+                    Mensaje = $"Error en {nameof(ResetPasswordAsync)} en {nameof(AccountService)}: {ex.Message}",
                     Excepcion = ex.ToString()
                 });
                 throw;
             }
         }
+
 
 
     }

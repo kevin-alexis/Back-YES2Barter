@@ -8,7 +8,7 @@ namespace Domain.ViewModels.Account
 {
     public class ResetPasswordVM
     {
-        public string Email { get; set; }
+        //public string Email { get; set; }
         public string ResetToken { get; set; }
         public string NewPassword { get; set; }
     }
